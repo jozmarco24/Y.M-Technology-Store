@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\EstadoCompra;
 use App\Enums\TipoComprobante;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,26 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
+/**
+ * @property int $id
+ * @property string $codigo
+ * @property int $proveedor_id
+ * @property TipoComprobante $tipo_comprobante
+ * @property string $numero_comprobante
+ * @property Carbon $fecha_emision
+ * @property string $moneda
+ * @property float|null $tipo_cambio
+ * @property float $subtotal
+ * @property float $igv
+ * @property float $total
+ * @property EstadoCompra $estado
+ * @property string|null $observaciones
+ * @property int $creado_por
+ * @property int|null $recibido_por
+ * @property Carbon|null $recibido_en
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Compra extends Model
 {
     use HasFactory, LogsActivity, SoftDeletes;

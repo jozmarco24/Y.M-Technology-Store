@@ -93,7 +93,7 @@ class CompraResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('producto_id')
                                     ->label('Producto')
-                                    ->options(Producto::all()->pluck('nombre', 'id'))
+                                    ->options(Producto::query()->pluck('nombre', 'id'))
                                     ->searchable()
                                     ->required()
                                     ->columnSpan(4),

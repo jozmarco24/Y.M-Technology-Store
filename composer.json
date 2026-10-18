@@ -8,13 +8,14 @@
         "php": "^8.2",
         "filament/filament": "~3.2.0",
         "laravel/framework": "^11.0",
-        "laravel/sanctum": "^4.3",
+        "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "spatie/laravel-activitylog": "^4.12",
         "spatie/laravel-permission": "^6.25"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "2.9",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",

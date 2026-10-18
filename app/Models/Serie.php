@@ -5,12 +5,27 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EstadoSerie;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $producto_id
+ * @property int|null $compra_detalle_id
+ * @property string $numero_serie
+ * @property EstadoSerie $estado
+ * @property float $costo
+ * @property Carbon $fecha_ingreso
+ * @property string|null $observaciones
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Producto|null $producto
+ * @property CompraDetalle|null $compraDetalle
+ */
 class Serie extends Model
 {
     use HasFactory;

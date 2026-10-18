@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Enums\EstadoSerie;
 use App\Models\Serie;
 use App\Models\User;
 
@@ -32,7 +33,7 @@ class SeriePolicy
 
     public function darBaja(User $user, Serie $serie): bool
     {
-        return $user->can('series.dar_baja') && $serie->estado->value === 'disponible';
+        return $user->can('series.dar_baja') && $serie->estado === EstadoSerie::DISPONIBLE;
     }
 
     public function ajustarEstado(User $user, Serie $serie): bool
