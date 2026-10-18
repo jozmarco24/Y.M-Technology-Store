@@ -3,8 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +14,35 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $rolAdmin = Role::firstOrCreate(['name' => 'admin']);
+        $rolVendedor = Role::firstOrCreate(['name' => 'vendedor']);
+        $rolAlmacen = Role::firstOrCreate(['name' => 'almacen']);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@tienda.com'],
+            [
+                'name' => 'Administrador',
+                'password' => Hash::make('password'),
+            ]
+        );
+        $admin->assignRole($rolAdmin);
+
+        $vendedor = User::firstOrCreate(
+            ['email' => 'vendedor@tienda.com'],
+            [
+                'name' => 'Vendedor',
+                'password' => Hash::make('password'),
+            ]
+        );
+        $vendedor->assignRole($rolVendedor);
+
+        $almacen = User::firstOrCreate(
+            ['email' => 'almacen@tienda.com'],
+            [
+                'name' => 'Almacenero',
+                'password' => Hash::make('password'),
+            ]
+        );
+        $almacen->assignRole($rolAlmacen);
     }
 }
