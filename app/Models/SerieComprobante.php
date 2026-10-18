@@ -35,7 +35,6 @@ class SerieComprobante extends Model
     protected function casts(): array
     {
         return [
-            'tipo_comprobante' => TipoComprobanteVenta::class,
             'correlativo_actual' => 'integer',
             'activo' => 'boolean',
         ];

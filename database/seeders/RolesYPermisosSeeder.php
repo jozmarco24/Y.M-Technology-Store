@@ -63,6 +63,12 @@ class RolesYPermisosSeeder extends Seeder
             // Reportes
             'reportes.ver',
             'reportes.ver_margen',
+            // Garantías y Devoluciones (Fase 3A)
+            'garantias.ver',
+            'devoluciones.solicitar',
+            'devoluciones.aprobar',
+            'devoluciones.completar',
+            'politicas_garantia.gestionar',
         ];
 
         foreach ($permisos as $permiso) {
@@ -103,6 +109,7 @@ class RolesYPermisosSeeder extends Seeder
             // NO series.ajustar_estado
             'movimientos.ver',
             // NO costos.ver
+            'garantias.ver',
         ]);
 
         // Vendedor
@@ -114,6 +121,8 @@ class RolesYPermisosSeeder extends Seeder
             'caja.abrir',
             'caja.cerrar', // Solo la propia vía policy
             'clientes.gestionar',
+            'garantias.ver',
+            'devoluciones.solicitar',
         ]);
     }
 }

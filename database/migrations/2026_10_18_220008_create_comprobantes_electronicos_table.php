@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('comprobantes_electronicos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('venta_id')->unique()->constrained('ventas')->cascadeOnDelete();
-            $table->string('tipo'); // boleta o factura
+            $table->foreignId('venta_id')->constrained('ventas')->cascadeOnDelete();
+            $table->string('tipo'); // boleta, factura, nota_credito
             $table->string('serie', 10);
             $table->unsignedInteger('numero');
             $table->string('estado')->default('pendiente'); // pendiente, enviando, aceptado, rechazado, error

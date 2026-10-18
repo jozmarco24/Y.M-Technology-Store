@@ -48,6 +48,29 @@ class SeriesComprobantesYClientesSeeder extends Seeder
             ]
         );
 
+        // Series para Notas de Crédito Electrónicas
+        SerieComprobante::firstOrCreate(
+            [
+                'tipo_comprobante' => 'nota_credito',
+                'serie' => 'FC01',
+            ],
+            [
+                'correlativo_actual' => 0,
+                'activo' => true,
+            ]
+        );
+
+        SerieComprobante::firstOrCreate(
+            [
+                'tipo_comprobante' => 'nota_credito',
+                'serie' => 'BC01',
+            ],
+            [
+                'correlativo_actual' => 0,
+                'activo' => true,
+            ]
+        );
+
         // Cliente genérico CLIENTES VARIOS (SIN_DOC)
         Cliente::firstOrCreate(
             [

@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RolesYPermisosSeeder::class);
         $this->call(SeriesComprobantesYClientesSeeder::class);
         $this->call(ConfiguracionesSeeder::class);
+        $this->call(PoliticaGarantiaSeeder::class);
 
         $admin = User::firstOrCreate(
             ['email' => 'admin@tienda.com'],

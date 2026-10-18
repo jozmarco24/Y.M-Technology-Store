@@ -49,7 +49,7 @@ enum EstadoSerie: string
             self::VENDIDA => $esAnulacionVenta
                 ? in_array($destino, [self::DISPONIBLE, self::EN_GARANTIA, self::DEVUELTA], true)
                 : in_array($destino, [self::EN_GARANTIA, self::DEVUELTA], true),
-            self::EN_GARANTIA => in_array($destino, [self::DISPONIBLE, self::DEVUELTA, self::BAJA], true),
+            self::EN_GARANTIA => in_array($destino, [self::VENDIDA, self::DISPONIBLE, self::BAJA, self::DEVUELTA], true),
             self::DEVUELTA => in_array($destino, [self::DISPONIBLE, self::BAJA], true),
             self::BAJA => false,
         };
