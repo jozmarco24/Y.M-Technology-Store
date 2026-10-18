@@ -14,9 +14,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $rolAdmin = Role::firstOrCreate(['name' => 'admin']);
-        $rolVendedor = Role::firstOrCreate(['name' => 'vendedor']);
-        $rolAlmacen = Role::firstOrCreate(['name' => 'almacen']);
+        $this->call(RolesYPermisosSeeder::class);
 
         $admin = User::firstOrCreate(
             ['email' => 'admin@tienda.com'],
@@ -25,7 +23,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
             ]
         );
-        $admin->assignRole($rolAdmin);
+        $admin->syncRoles(['admin']);
 
         $vendedor = User::firstOrCreate(
             ['email' => 'vendedor@tienda.com'],
@@ -34,7 +32,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
             ]
         );
-        $vendedor->assignRole($rolVendedor);
+        $vendedor->syncRoles(['vendedor']);
 
         $almacen = User::firstOrCreate(
             ['email' => 'almacen@tienda.com'],
@@ -43,6 +41,6 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
             ]
         );
-        $almacen->assignRole($rolAlmacen);
+        $almacen->syncRoles(['almacen']);
     }
 }
