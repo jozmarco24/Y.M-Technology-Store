@@ -11,7 +11,7 @@ use InvalidArgumentException;
 class MarcaService
 {
     /**
-     * @param array<string, mixed> $datos
+     * @param  array<string, mixed>  $datos
      */
     public function crear(array $datos): Marca
     {
@@ -23,7 +23,7 @@ class MarcaService
     }
 
     /**
-     * @param array<string, mixed> $datos
+     * @param  array<string, mixed>  $datos
      */
     public function actualizar(Marca $marca, array $datos): Marca
     {
@@ -54,7 +54,7 @@ class MarcaService
     }
 
     /**
-     * @param array<string, mixed> $datos
+     * @param  array<string, mixed>  $datos
      */
     protected function validar(array $datos, ?int $exceptId = null): void
     {

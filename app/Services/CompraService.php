@@ -19,8 +19,8 @@ use RuntimeException;
 class CompraService
 {
     /**
-     * @param array<string, mixed> $datos
-     * @param array<int, array<string, mixed>> $detalles
+     * @param  array<string, mixed>  $datos
+     * @param  array<int, array<string, mixed>>  $detalles
      */
     public function crearBorrador(array $datos, array $detalles, User $usuario): Compra
     {
@@ -63,8 +63,8 @@ class CompraService
     }
 
     /**
-     * @param array<string, mixed> $datos
-     * @param array<int, array<string, mixed>>|null $detalles
+     * @param  array<string, mixed>  $datos
+     * @param  array<int, array<string, mixed>>|null  $detalles
      */
     public function actualizarBorrador(Compra $compra, array $datos, ?array $detalles = null): Compra
     {
@@ -123,7 +123,7 @@ class CompraService
             if ($compra->estado === EstadoCompra::BORRADOR) {
                 $compra->update([
                     'estado' => EstadoCompra::ANULADA,
-                    'observaciones' => trim(($compra->observaciones ?? '') . "\nAnulada: " . $motivo),
+                    'observaciones' => trim(($compra->observaciones ?? '')."\nAnulada: ".$motivo),
                 ]);
 
                 return $compra->fresh();
@@ -153,7 +153,7 @@ class CompraService
                         foreach ($detalle->series as $serie) {
                             $serie->update(['estado' => EstadoSerie::BAJA]);
 
-                            $stockActual = (new InventarioService())->stockDisponible($producto);
+                            $stockActual = (new InventarioService)->stockDisponible($producto);
 
                             MovimientoInventario::create([
                                 'producto_id' => $producto->id,
@@ -169,7 +169,7 @@ class CompraService
                         }
                     } else {
                         // Producto sin control de series: reduce stock por cantidad
-                        $stockActual = (new InventarioService())->stockDisponible($producto);
+                        $stockActual = (new InventarioService)->stockDisponible($producto);
                         $nuevoStock = $stockActual - $detalle->cantidad;
 
                         MovimientoInventario::create([
@@ -188,7 +188,7 @@ class CompraService
 
                 $compra->update([
                     'estado' => EstadoCompra::ANULADA,
-                    'observaciones' => trim(($compra->observaciones ?? '') . "\nAnulada: " . $motivo),
+                    'observaciones' => trim(($compra->observaciones ?? '')."\nAnulada: ".$motivo),
                 ]);
 
                 return $compra->fresh();
@@ -199,7 +199,7 @@ class CompraService
     }
 
     /**
-     * @param array<int, array<string, mixed>> $detalles
+     * @param  array<int, array<string, mixed>>  $detalles
      * @return array{subtotal: float, igv: float, total: float}
      */
     public function calcularTotales(array $detalles): array
@@ -238,7 +238,7 @@ class CompraService
         DB::statement('LOCK TABLE compras IN SHARE ROW EXCLUSIVE MODE');
 
         $ultimoNumero = DB::table('compras')
-            ->selectRaw("COALESCE(MAX(CAST(SUBSTRING(codigo FROM 5) AS INTEGER)), 0) as max_codigo")
+            ->selectRaw('COALESCE(MAX(CAST(SUBSTRING(codigo FROM 5) AS INTEGER)), 0) as max_codigo')
             ->value('max_codigo');
 
         $siguiente = ((int) $ultimoNumero) + 1;

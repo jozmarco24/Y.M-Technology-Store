@@ -21,7 +21,7 @@ use RuntimeException;
 class InventarioService
 {
     /**
-     * @param array<int, array<string>> $seriesPorDetalle Array asociativo [detalle_id => ['SN1', 'SN2', ...]]
+     * @param  array<int, array<string>>  $seriesPorDetalle  Array asociativo [detalle_id => ['SN1', 'SN2', ...]]
      */
     public function recibirCompra(Compra $compra, array $seriesPorDetalle, User $usuario): Compra
     {
@@ -48,7 +48,7 @@ class InventarioService
                 if ($producto->controla_series) {
                     if (count($seriesItem) !== $detalle->cantidad) {
                         throw new InvalidArgumentException(
-                            "La cantidad de series enviadas (" . count($seriesItem) . ") no coincide con la cantidad del detalle ({$detalle->cantidad}) para el producto {$producto->nombre}."
+                            'La cantidad de series enviadas ('.count($seriesItem).") no coincide con la cantidad del detalle ({$detalle->cantidad}) para el producto {$producto->nombre}."
                         );
                     }
 
@@ -180,12 +180,12 @@ class InventarioService
         return DB::transaction(function () use ($serie, $motivo, $usuario) {
             $serieBloqueada = Serie::query()->lockForUpdate()->find($serie->id);
             if ($serieBloqueada->estado !== EstadoSerie::DISPONIBLE) {
-                throw new RuntimeException("La serie ya no se encuentra en estado disponible.");
+                throw new RuntimeException('La serie ya no se encuentra en estado disponible.');
             }
 
             $serie->update([
                 'estado' => EstadoSerie::BAJA,
-                'observaciones' => trim(($serie->observaciones ?? '') . "\nBaja: " . $motivo),
+                'observaciones' => trim(($serie->observaciones ?? '')."\nBaja: ".$motivo),
             ]);
 
             $producto = Producto::query()->lockForUpdate()->find($serie->producto_id);
@@ -226,7 +226,7 @@ class InventarioService
 
             $serie->update([
                 'estado' => $nuevoEstado,
-                'observaciones' => trim(($serie->observaciones ?? '') . "\nAjuste a {$nuevoEstado->value}: {$motivo}"),
+                'observaciones' => trim(($serie->observaciones ?? '')."\nAjuste a {$nuevoEstado->value}: {$motivo}"),
             ]);
 
             $producto = Producto::query()->lockForUpdate()->find($serie->producto_id);
