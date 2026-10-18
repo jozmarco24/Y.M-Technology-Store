@@ -69,6 +69,13 @@ class RolesYPermisosSeeder extends Seeder
             'devoluciones.aprobar',
             'devoluciones.completar',
             'politicas_garantia.gestionar',
+            // Servicio Técnico (Fase 3B)
+            'servicio.ver',
+            'servicio.recibir',
+            'servicio.diagnosticar',
+            'servicio.cobrar',
+            'servicio.entregar',
+            'servicio.forzar_tipo',
         ];
 
         foreach ($permisos as $permiso) {
@@ -79,6 +86,7 @@ class RolesYPermisosSeeder extends Seeder
         $admin = Role::firstOrCreate(['name' => 'admin']);
         $almacen = Role::firstOrCreate(['name' => 'almacen']);
         $vendedor = Role::firstOrCreate(['name' => 'vendedor']);
+        $tecnico = Role::firstOrCreate(['name' => 'tecnico']);
 
         // Admin tiene todos los permisos
         $admin->syncPermissions(Permission::all());
@@ -110,6 +118,7 @@ class RolesYPermisosSeeder extends Seeder
             'movimientos.ver',
             // NO costos.ver
             'garantias.ver',
+            'servicio.ver',
         ]);
 
         // Vendedor
@@ -123,6 +132,18 @@ class RolesYPermisosSeeder extends Seeder
             'clientes.gestionar',
             'garantias.ver',
             'devoluciones.solicitar',
+            'servicio.ver',
+            'servicio.recibir',
+            'servicio.entregar',
+            'servicio.cobrar',
+        ]);
+
+        // Técnico
+        $tecnico->syncPermissions([
+            'productos.ver',
+            'series.ver',
+            'servicio.ver',
+            'servicio.diagnosticar',
         ]);
     }
 }

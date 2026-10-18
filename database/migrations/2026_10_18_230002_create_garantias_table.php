@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('garantias', function (Blueprint $table) {
             $table->id();
             $table->foreignId('serie_id')->constrained('series')->cascadeOnDelete();
-            $table->foreignId('venta_detalle_id')->constrained('venta_detalles')->cascadeOnDelete();
+            $table->foreignId('venta_detalle_id')->nullable()->constrained('venta_detalles')->nullOnDelete();
             $table->foreignId('cliente_id')->constrained('clientes')->restrictOnDelete();
             $table->foreignId('politica_garantia_id')->nullable()->constrained('politicas_garantia')->nullOnDelete();
             $table->date('fecha_inicio');
