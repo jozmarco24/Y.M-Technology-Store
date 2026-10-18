@@ -133,19 +133,139 @@ Todas las rutas requieren autenticación con token Bearer (`auth:sanctum`).
 
 ---
 
+## 🛍️ Módulos de Fase 2: POS, Caja y Facturación Electrónica
+
+### 1. Punto de Venta (POS) en `/pos`
+- **Interfaz moderna a pantalla completa**: Desarrollada en **Livewire 3 + Tailwind CSS**, optimizada para táctil, lectores de código de barras y teclado numérico.
+- **Flujo de Caja Turno por Turno**:
+  - Restricción estricta: un vendedor no puede cobrar sin una sesión de caja abierta.
+  - Modales para **apertura de caja**, **ingresos/egresos manuales**, y **cierre ciego** con cálculo automático de diferencia (sobrante/faltante).
+- **Proceso de Cobro Rápido**:
+  - Búsqueda en tiempo real por nombre, SKU o escaneo directo de número de serie.
+  - Pagos mixtos (Efectivo, Yape, Plin, Tarjeta POS, Transferencia bancaria) con cálculo inmediato de vuelto.
+  - Generación e impresión de ticket térmico estándar de 80 mm (`/pos/ticket/{id}`) con QR de SUNAT, hash SHA y desglose de formas de pago.
+
+### 2. Facturación Electrónica Asíncrona con Nubefact
+- **Principio Fundamental**: **La venta nunca depende de internet ni de SUNAT**.
+  1. La venta se registra localmente garantizando serie y correlativo sin saltos (`lockForUpdate`).
+  2. Inmediatamente después del commit (`afterCommit`), se inicializa el comprobante en estado `pendiente` y se despacha un Job a la cola `facturacion`.
+  3. Si SUNAT o Nubefact tienen intermitencia, la venta queda intacta y el sistema reintenta el envío en segundo plano.
+- **Arquitectura de Emisión Desacoplada**:
+  - Interfaz `App\Services\Facturacion\EmisorComprobante` (`emitir`, `consultar`, `anular`).
+  - Implementación `NubefactEmisor`: Cliente HTTP con timeout, reintentos y clasificación de errores.
+  - Implementación `EmisorSimulado`: Respuestas inmediatas y realistas para pruebas y desarrollo offline.
+  - Vinculación automática en el contenedor de servicios según `NUBEFACT_MODO`.
+
+---
+
+## 🔄 Flujo: Venta ➔ Comprobante ➔ SUNAT
+
+```mermaid
+graph TD
+    A[Venta confirmada en POS / Admin] --> B[Transacción DB: Inventario + Series + Caja]
+    B --> C{¿Tipo de Comprobante?}
+    C -->|Nota de Venta| D[Finaliza Venta sin Comprobante Electrónico]
+    C -->|Boleta o Factura| E[Registra Comprobante en 'pendiente']
+    E --> F[Commit DB Exitoso]
+    F --> G[Despachar EnviarComprobanteJob en cola 'facturacion']
+    G --> H{Llamada API Nubefact}
+    H -->|200 Aceptado| I[Estado 'aceptado' + Guarda PDF, XML, CDR, QR y Hash]
+    H -->|Timeout / 5xx Servidor| J[Estado 'error' + Reintento con Backoff Exponencial]
+    H -->|422 Rechazo Definitivo| K[Estado 'rechazado' + Notificación de Alerta a Admin]
+    I --> L{¿Cliente tiene Email?}
+    L -->|Sí| M[Despacha EnviarComprobanteEmailJob]
+    L -->|No| N[Fin del Flujo]
+```
+
+---
+
+## ⚙️ Configuración de Facturación y Entornos
+
+En `.env`:
+```env
+# Modos disponibles: 'simulado', 'demo', 'produccion'
+NUBEFACT_MODO=simulado
+
+# Credenciales de API Nubefact (solo para demo o produccion)
+NUBEFACT_RUTA=https://api.nubefact.com/api/v1/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+NUBEFACT_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Parámetros de conexión HTTP
+NUBEFACT_TIMEOUT=15
+NUBEFACT_RETRIES=2
+```
+
+### Cómo pasar de Demo a Producción:
+1. En tu cuenta de **Nubefact**, obtén la URL y Token de producción en **API - Integración**.
+2. Cambia en el archivo `.env`:
+   ```env
+   NUBEFACT_MODO=produccion
+   NUBEFACT_RUTA=https://api.nubefact.com/api/v1/tu-ruta-de-produccion
+   NUBEFACT_TOKEN=tu-token-real-de-produccion
+   ```
+3. Ejecuta `php artisan config:cache` para actualizar la configuración.
+4. En el panel Filament, ingresa a **Facturación Electrónica > Estado de Integración** y pulsa **Probar Conexión con Nubefact** para validar la autenticación antes de emitir comprobantes reales.
+
+---
+
+## 🔄 Colas, Scheduler y Supervisor
+
+### 1. Ejecución Local de Trabajadores de Cola
+Para procesar comprobantes en desarrollo:
+```powershell
+php artisan queue:work --queue=facturacion,default --tries=5
+```
+
+### 2. Ejecución Local del Scheduler
+Para ejecutar el scheduler de reintento automático (cada 10 minutos):
+```powershell
+php artisan schedule:work
+```
+
+### 3. Configuración con Supervisor en Servidor de Producción (Linux)
+Crea el archivo `/etc/supervisor/conf.d/tienda-worker.conf`:
+```ini
+[program:tienda-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/tienda/artisan queue:work --queue=facturacion,default --sleep=3 --tries=5 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/tienda/storage/logs/worker.log
+stopwaitsecs=3600
+```
+
+Actualiza e inicia el servicio:
+```bash
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start tienda-worker:*
+```
+
+Y agrega la tarea programada en el crontab del servidor (`crontab -e -u www-data`):
+```cron
+* * * * * cd /var/www/tienda && php artisan schedule:run >> /dev/null 2>&1
+```
+
+---
+
 ## 🧪 Pruebas Automatizadas y Calidad
 
-Ejecutar la suite completa de pruebas (29 tests de integración y características):
+Ejecutar la suite completa de pruebas (66 tests de Fase 0, Fase 1 y Fase 2):
 ```powershell
 php artisan test
 ```
 
-Verificar el estándar de código PSR-12:
+Verificar estándar de código PSR-12:
 ```powershell
 ./vendor/bin/pint --test
 ```
 
-Ejecutar análisis estático con Larastan (PHPStan Nivel 5):
+Ejecutar análisis estático con Larastan / PHPStan (Nivel 5):
 ```powershell
 ./vendor/bin/phpstan analyse --memory-limit=1G
 ```

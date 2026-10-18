@@ -12,6 +12,7 @@ use App\Enums\TipoComprobanteVenta;
 use App\Enums\TipoDocumentoCliente;
 use App\Enums\TipoMovimiento;
 use App\Enums\TipoMovimientoCaja;
+use App\Jobs\EnviarComprobanteJob;
 use App\Models\CajaSesion;
 use App\Models\Cliente;
 use App\Models\MovimientoInventario;
@@ -21,6 +22,7 @@ use App\Models\User;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Models\VentaPago;
+use App\Services\Facturacion\FacturacionService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -31,7 +33,8 @@ class VentaService
     public function __construct(
         protected NumeracionService $numeracionService,
         protected CajaService $cajaService,
-        protected InventarioService $inventarioService
+        protected InventarioService $inventarioService,
+        protected FacturacionService $facturacionService
     ) {}
 
     /**
@@ -384,12 +387,19 @@ class VentaService
                         monto: $montoNetoPago,
                         metodoPago: $metodo,
                         ventaId: $venta->id,
-                        usuario: $vendedor
                     );
                 }
             }
 
-            return $venta->fresh(['cliente', 'vendedor', 'detalles.serie', 'detalles.producto', 'pagos', 'cajaSesion']);
+            // 9. Comprobante electrónico (boleta / factura)
+            if ($tipoComprobante !== TipoComprobanteVenta::NOTA_VENTA) {
+                $this->facturacionService->inicializarComprobante($venta);
+
+                EnviarComprobanteJob::dispatch($venta->id)
+                    ->afterCommit();
+            }
+
+            return $venta->fresh(['cliente', 'vendedor', 'detalles.serie', 'detalles.producto', 'pagos', 'cajaSesion', 'comprobanteElectronico']);
         });
     }
 
@@ -496,7 +506,13 @@ class VentaService
                 'motivo_anulacion' => $motivoLimpio,
             ]);
 
-            return $ventaBloqueada->fresh();
+            // 4. Anular en SUNAT si tiene comprobante electrónico
+            $comprobante = $ventaBloqueada->comprobanteElectronico;
+            if ($comprobante !== null && $comprobante->estaAceptado()) {
+                $this->facturacionService->anular($ventaBloqueada, $motivoLimpio);
+            }
+
+            return $ventaBloqueada->fresh(['comprobanteElectronico']);
         });
     }
 }

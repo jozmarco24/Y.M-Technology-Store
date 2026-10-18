@@ -724,8 +724,20 @@
 
                 <h2 class="text-xl font-bold text-white">¡Venta Registrada!</h2>
                 <p class="text-sm font-mono text-emerald-400 mt-1">{{ $ventaExitosa->codigo }}</p>
-                <p class="text-xs text-slate-400 mt-0.5">{{ $ventaExitosa->tipo_comprobante->etiqueta() }} {{ $ventaExitosa->serie_comprobante }}-{{ $ventaExitosa->numero_comprobante }}</p>
-                <div class="text-2xl font-bold font-mono text-white my-4">S/ {{ number_format((float)$ventaExitosa->total, 2) }}</div>
+                <div class="text-2xl font-bold font-mono text-white my-3">S/ {{ number_format((float)$ventaExitosa->total, 2) }}</div>
+
+                @if ($ventaExitosa->tipo_comprobante->value !== 'nota_venta')
+                    @php
+                        $comprobante = $ventaExitosa->comprobanteElectronico;
+                        $estado = $comprobante?->estado->value ?? 'pendiente';
+                    @endphp
+                    <div class="my-3 px-3 py-2 rounded-xl text-xs flex items-center justify-between border
+                        {{ $estado === 'aceptado' ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300' : 
+                           ($estado === 'rechazado' || $estado === 'error' ? 'bg-rose-950/60 border-rose-800 text-rose-300' : 'bg-amber-950/60 border-amber-800 text-amber-300') }}">
+                        <span class="font-medium">SUNAT / Nubefact:</span>
+                        <span class="uppercase font-bold tracking-wider">{{ $estado }}</span>
+                    </div>
+                @endif
 
                 <div class="space-y-2 pt-2">
                     <a href="{{ route('pos.ticket', $ventaExitosa->id) }}" target="_blank"

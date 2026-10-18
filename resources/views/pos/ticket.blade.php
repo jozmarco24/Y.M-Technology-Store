@@ -183,13 +183,38 @@
 
     <div class="divider"></div>
 
-    <!-- ESPACIO RESERVADO PARA QR Y HASH SUNAT (FASE 2C) -->
-    <div class="qr-placeholder">
-        [ ESPACIO RESERVADO<br>CÓDIGO QR SUNAT<br>(Fase 2C) ]
-    </div>
-    <div class="text-center" style="font-size: 10px; color: #555;">
-        Hash SHA: [Fase 2C Facturación Electrónica]
-    </div>
+    <!-- SECCIÓN SUNAT (CÓDIGO QR, HASH O ESTADO PENDIENTE) -->
+    @if ($venta->tipo_comprobante->value !== 'nota_venta')
+        @php
+            $comprobante = $venta->comprobanteElectronico;
+        @endphp
+        @if ($comprobante && $comprobante->estaAceptado())
+            <div class="text-center" style="margin: 10px 0;">
+                @if ($comprobante->codigo_qr)
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data={{ urlencode($comprobante->codigo_qr) }}" 
+                         alt="QR SUNAT" 
+                         style="width: 130px; height: 130px; margin: 0 auto; display: block;" />
+                @endif
+                @if ($comprobante->hash)
+                    <div style="font-size: 9px; color: #333; margin-top: 4px; word-break: break-all;">
+                        Hash: {{ $comprobante->hash }}
+                    </div>
+                @endif
+                <div style="font-size: 9px; color: #555; margin-top: 2px;">
+                    Representación impresa de la {{ $venta->tipo_comprobante->etiqueta() }} Electrónica
+                </div>
+            </div>
+        @else
+            <div class="text-center" style="margin: 10px 0; border: 1px dashed #666; padding: 6px; font-size: 11px;">
+                <strong>Comprobante en proceso de envío a SUNAT</strong><br>
+                <span style="font-size: 9px; color: #666;">Estado actual: {{ $comprobante ? $comprobante->estado->value : 'pendiente' }}</span>
+            </div>
+        @endif
+    @else
+        <div class="text-center" style="margin: 6px 0; font-size: 10px; color: #666;">
+            DOCUMENTO INTERNO - NO VÁLIDO PARA CRÉDITO FISCAL
+        </div>
+    @endif
 
     <div class="divider"></div>
 

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Enums\EstadoComprobante;
 use App\Enums\EstadoVenta;
 use App\Enums\MetodoPago;
 use App\Enums\TipoComprobanteVenta;
 use App\Filament\Resources\VentaResource\Pages;
+use App\Jobs\EnviarComprobanteJob;
 use App\Models\User;
 use App\Models\Venta;
+use App\Services\Facturacion\FacturacionService;
 use App\Services\VentaService;
 use Carbon\Carbon;
 use Filament\Forms;
@@ -242,6 +245,20 @@ class VentaResource extends Resource
                     ->formatStateUsing(fn ($state) => $state->etiqueta())
                     ->color(fn ($state) => $state->color()),
 
+                Tables\Columns\TextColumn::make('comprobanteElectronico.estado')
+                    ->label('SUNAT')
+                    ->badge()
+                    ->placeholder('-')
+                    ->color(fn ($state): string => match ($state?->value ?? $state) {
+                        'aceptado' => 'success',
+                        'rechazado' => 'danger',
+                        'error' => 'danger',
+                        'enviando' => 'info',
+                        'pendiente' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => $state ? strtoupper($state instanceof EstadoComprobante ? $state->value : (string) $state) : '-'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Fecha')
                     ->dateTime('d/m/Y H:i')
@@ -281,6 +298,90 @@ class VentaResource extends Resource
                     ->color('gray')
                     ->url(fn (Venta $record) => route('pos.ticket', $record->id))
                     ->openUrlInNewTab(),
+
+                // Enlaces de descarga electrónica (PDF / XML / CDR) visibles solo con permiso ventas.ver
+                Tables\Actions\Action::make('pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('danger')
+                    ->visible(fn (Venta $record) => Auth::user()?->can('ventas.ver') && ! empty($record->comprobanteElectronico?->enlace_pdf))
+                    ->url(fn (Venta $record) => $record->comprobanteElectronico?->enlace_pdf)
+                    ->openUrlInNewTab(),
+
+                Tables\Actions\Action::make('xml')
+                    ->label('XML')
+                    ->icon('heroicon-o-code-bracket')
+                    ->color('gray')
+                    ->visible(fn (Venta $record) => Auth::user()?->can('ventas.ver') && ! empty($record->comprobanteElectronico?->enlace_xml))
+                    ->url(fn (Venta $record) => $record->comprobanteElectronico?->enlace_xml)
+                    ->openUrlInNewTab(),
+
+                Tables\Actions\Action::make('cdr')
+                    ->label('CDR')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->visible(fn (Venta $record) => Auth::user()?->can('ventas.ver') && ! empty($record->comprobanteElectronico?->enlace_cdr))
+                    ->url(fn (Venta $record) => $record->comprobanteElectronico?->enlace_cdr)
+                    ->openUrlInNewTab(),
+
+                // Reintentar envío a SUNAT
+                Tables\Actions\Action::make('reintentar_envio')
+                    ->label('Reintentar Envío')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->visible(fn (Venta $record) => Auth::user()?->hasRole('admin') && $record->comprobanteElectronico !== null && ! $record->comprobanteElectronico->estaAceptado())
+                    ->requiresConfirmation()
+                    ->modalHeading('Reintentar Envío a SUNAT')
+                    ->action(function (Venta $record) {
+                        activity('ventas')
+                            ->performedOn($record)
+                            ->causedBy(Auth::user())
+                            ->log('Reintento manual de envío de comprobante a SUNAT');
+
+                        EnviarComprobanteJob::dispatch($record->id)
+                            ->onQueue(config('facturacion.cola', 'facturacion'));
+
+                        Notification::make()
+                            ->title('Job de envío despachado')
+                            ->body("Se despachó el envío del comprobante de la venta {$record->codigo}.")
+                            ->success()
+                            ->send();
+                    }),
+
+                // Consultar estado en Nubefact
+                Tables\Actions\Action::make('consultar_sunat')
+                    ->label('Consultar Estado')
+                    ->icon('heroicon-o-magnifying-glass')
+                    ->color('info')
+                    ->visible(fn (Venta $record) => Auth::user()?->hasRole('admin') && $record->comprobanteElectronico !== null)
+                    ->action(function (Venta $record, FacturacionService $facturacionService) {
+                        try {
+                            $resultado = $facturacionService->consultar($record->comprobanteElectronico);
+                            Notification::make()
+                                ->title('Consulta SUNAT completada')
+                                ->body("Estado actual: {$resultado->estado->value}. Mensaje: ".($resultado->mensajeSunat ?? 'Sin mensaje'))
+                                ->info()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Error en consulta')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                // Ver respuesta cruda de SUNAT
+                Tables\Actions\Action::make('ver_respuesta_sunat')
+                    ->label('Respuesta SUNAT')
+                    ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                    ->color('gray')
+                    ->visible(fn (Venta $record) => Auth::user()?->hasRole('admin') && $record->comprobanteElectronico?->respuesta_json !== null)
+                    ->modalHeading('Respuesta de SUNAT / Nubefact')
+                    ->modalContent(fn (Venta $record) => view('filament.components.respuesta-sunat-modal', [
+                        'comprobante' => $record->comprobanteElectronico,
+                    ]))
+                    ->modalSubmitAction(false),
 
                 // Acción ANULAR: solo admin con motivo obligatorio y confirmación
                 Tables\Actions\Action::make('anular')

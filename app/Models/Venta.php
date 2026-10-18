@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -152,5 +153,10 @@ class Venta extends Model
     public function pagos(): HasMany
     {
         return $this->hasMany(VentaPago::class, 'venta_id');
+    }
+
+    public function comprobanteElectronico(): HasOne
+    {
+        return $this->hasOne(ComprobanteElectronico::class, 'venta_id');
     }
 }
