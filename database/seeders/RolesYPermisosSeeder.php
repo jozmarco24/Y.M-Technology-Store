@@ -50,6 +50,19 @@ class RolesYPermisosSeeder extends Seeder
             'movimientos.ver',
             // Costos y márgenes
             'costos.ver',
+            // Ventas
+            'ventas.crear',
+            'ventas.ver',
+            'ventas.anular',
+            // Caja
+            'caja.abrir',
+            'caja.cerrar',
+            'caja.ver_todas',
+            // Clientes
+            'clientes.gestionar',
+            // Reportes
+            'reportes.ver',
+            'reportes.ver_margen',
         ];
 
         foreach ($permisos as $permiso) {
@@ -96,7 +109,11 @@ class RolesYPermisosSeeder extends Seeder
         $vendedor->syncPermissions([
             'productos.ver',
             'series.ver',
-            // Sin acceso a compras, movimientos, costos, ni crear/editar
+            'ventas.crear',
+            'ventas.ver', // Solo las propias vía policy
+            'caja.abrir',
+            'caja.cerrar', // Solo la propia vía policy
+            'clientes.gestionar',
         ]);
     }
 }
