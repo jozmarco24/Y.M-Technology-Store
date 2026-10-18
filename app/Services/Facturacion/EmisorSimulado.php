@@ -6,6 +6,7 @@ namespace App\Services\Facturacion;
 
 use App\Enums\EstadoComprobante;
 use App\Models\ComprobanteElectronico;
+use App\Models\NotaCredito;
 use App\Models\Venta;
 
 class EmisorSimulado implements EmisorComprobante
@@ -102,6 +103,42 @@ class EmisorSimulado implements EmisorComprobante
             payload: $payload,
             respuesta: $respuesta,
             ticketAnulacion: $respuesta['ticket']
+        );
+    }
+
+    public function emitirNotaCredito(NotaCredito $notaCredito): ResultadoEmision
+    {
+        $payload = [
+            'operacion' => 'generar_comprobante',
+            'tipo_de_comprobante' => 3, // 3 = Nota de Crédito
+            'serie' => $notaCredito->serie,
+            'numero' => $notaCredito->numero,
+            'total' => (float) $notaCredito->monto,
+            'motivo' => $notaCredito->motivo_sunat,
+        ];
+
+        $serie = $notaCredito->serie;
+        $numero = str_pad((string) $notaCredito->numero, 8, '0', STR_PAD_LEFT);
+
+        $respuesta = [
+            'enlace_del_pdf' => "https://facturacion.ejemplo.pe/pdf/{$serie}-{$numero}.pdf",
+            'enlace_del_xml' => "https://facturacion.ejemplo.pe/xml/{$serie}-{$numero}.xml",
+            'enlace_del_cdr' => "https://facturacion.ejemplo.pe/cdr/{$serie}-{$numero}.zip",
+            'cadena_para_codigo_qr' => "20601234568|{$serie}|{$numero}|{$notaCredito->monto}|QR-NC-SIMULADO|",
+            'codigo_hash' => hash('sha256', "NC-{$serie}-{$numero}"),
+            'sunat_description' => 'La Nota de Crédito ha sido aceptada en SUNAT.',
+            'sunat_responsecode' => '0',
+        ];
+
+        return ResultadoEmision::aceptado(
+            enlacePdf: $respuesta['enlace_del_pdf'],
+            enlaceXml: $respuesta['enlace_del_xml'],
+            enlaceCdr: $respuesta['enlace_del_cdr'],
+            codigoQr: $respuesta['cadena_para_codigo_qr'],
+            hash: $respuesta['codigo_hash'],
+            payload: $payload,
+            respuesta: $respuesta,
+            mensaje: $respuesta['sunat_description']
         );
     }
 }

@@ -34,7 +34,8 @@ class VentaService
         protected NumeracionService $numeracionService,
         protected CajaService $cajaService,
         protected InventarioService $inventarioService,
-        protected FacturacionService $facturacionService
+        protected FacturacionService $facturacionService,
+        protected GarantiaService $garantiaService
     ) {}
 
     /**
@@ -399,6 +400,9 @@ class VentaService
                     ->afterCommit();
             }
 
+            // 10. Generar garantías para cada serie vendida dentro de la misma transacción
+            $this->garantiaService->generarParaVenta($venta);
+
             return $venta->fresh(['cliente', 'vendedor', 'detalles.serie', 'detalles.producto', 'pagos', 'cajaSesion', 'comprobanteElectronico']);
         });
     }
@@ -511,6 +515,9 @@ class VentaService
             if ($comprobante !== null && $comprobante->estaAceptado()) {
                 $this->facturacionService->anular($ventaBloqueada, $motivoLimpio);
             }
+
+            // 5. Anular garantías de la venta
+            $this->garantiaService->anularPorAnulacionDeVenta($ventaBloqueada);
 
             return $ventaBloqueada->fresh(['comprobanteElectronico']);
         });

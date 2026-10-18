@@ -2,6 +2,7 @@
 
 use App\Jobs\EnviarComprobanteJob;
 use App\Models\ComprobanteElectronico;
+use App\Services\GarantiaService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -19,3 +20,7 @@ Schedule::call(function () {
             ->onQueue(config('facturacion.cola', 'facturacion'));
     }
 })->everyTenMinutes()->name('reintentar-comprobantes-electronicos');
+
+Schedule::call(function () {
+    app(GarantiaService::class)->marcarVencidas();
+})->dailyAt('00:01')->name('marcar-garantias-vencidas');

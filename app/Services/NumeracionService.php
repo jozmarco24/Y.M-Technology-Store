@@ -16,9 +16,9 @@ class NumeracionService
      *
      * @return array{serie: string, numero: int}
      */
-    public function obtenerSiguienteCorrelativo(TipoComprobanteVenta $tipo, ?string $serie = null): array
+    public function obtenerSiguienteCorrelativo(string|TipoComprobanteVenta $tipo, ?string $serie = null): array
     {
-        $tipoStr = $tipo->value;
+        $tipoStr = $tipo instanceof TipoComprobanteVenta ? $tipo->value : $tipo;
 
         $serieModel = SerieComprobante::where('tipo_comprobante', $tipoStr)
             ->where('activo', true)

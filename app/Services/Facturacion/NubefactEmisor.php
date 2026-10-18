@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Facturacion;
 
+use App\Enums\TipoComprobanteVenta;
 use App\Models\ComprobanteElectronico;
+use App\Models\NotaCredito;
 use App\Models\Venta;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -62,6 +64,48 @@ class NubefactEmisor implements EmisorComprobante
             'numero' => $comprobante->numero,
             'motivo' => $motivo,
             'codigo_unico' => "ANUL-{$comprobante->serie}-{$comprobante->numero}",
+        ];
+
+        return $this->enviarSolicitud($payload);
+    }
+
+    public function emitirNotaCredito(NotaCredito $notaCredito): ResultadoEmision
+    {
+        $venta = $notaCredito->venta;
+        $esFactura = $venta->tipo_comprobante === TipoComprobanteVenta::FACTURA;
+
+        $payload = [
+            'operacion' => 'generar_comprobante',
+            'tipo_de_comprobante' => 3, // 3 = Nota de Crédito
+            'serie' => $notaCredito->serie,
+            'numero' => $notaCredito->numero,
+            'cliente_tipo_de_documento' => $esFactura ? 6 : 1,
+            'cliente_numero_de_documento' => $venta->cliente?->numero_documento ?? '00000000',
+            'cliente_denominacion' => $venta->cliente?->nombre_razon_social ?? 'CLIENTES VARIOS',
+            'cliente_direccion' => $venta->cliente?->direccion ?? '',
+            'fecha_de_emision' => now()->format('d-m-Y'),
+            'moneda' => 1, // PEN
+            'tipo_de_nota_de_credito' => (int) $notaCredito->motivo_sunat,
+            'documento_que_se_modifica_tipo' => $esFactura ? 1 : 2,
+            'documento_que_se_modifica_serie' => $venta->serie_comprobante,
+            'documento_que_se_modifica_numero' => $venta->numero_comprobante,
+            'total' => (float) $notaCredito->monto,
+            'total_igv' => round(((float) $notaCredito->monto / 1.18) * 0.18, 2),
+            'total_gravada' => round((float) $notaCredito->monto / 1.18, 2),
+            'items' => [
+                [
+                    'unidad_de_medida' => 'NIU',
+                    'codigo' => 'NC-DEV',
+                    'descripcion' => 'DEVOLUCIÓN DE MERCADERÍA / COMPROBANTE DE VENTA '.$venta->codigo,
+                    'cantidad' => 1,
+                    'valor_unitario' => round((float) $notaCredito->monto / 1.18, 2),
+                    'precio_unitario' => (float) $notaCredito->monto,
+                    'subtotal' => round((float) $notaCredito->monto / 1.18, 2),
+                    'tipo_de_igv' => 1, // Gravado - Operación Onerosa
+                    'igv' => round(((float) $notaCredito->monto / 1.18) * 0.18, 2),
+                    'total' => (float) $notaCredito->monto,
+                ],
+            ],
         ];
 
         return $this->enviarSolicitud($payload);

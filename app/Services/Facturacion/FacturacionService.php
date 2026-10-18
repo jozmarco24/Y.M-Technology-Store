@@ -8,6 +8,7 @@ use App\Enums\EstadoComprobante;
 use App\Enums\TipoComprobanteVenta;
 use App\Enums\TipoDocumentoCliente;
 use App\Models\ComprobanteElectronico;
+use App\Models\NotaCredito;
 use App\Models\User;
 use App\Models\Venta;
 use Filament\Notifications\Notification;
@@ -250,6 +251,51 @@ class FacturacionService
             'respuesta_json' => array_merge($comprobante->respuesta_json ?? [], [
                 'anulacion' => $resultado->respuesta,
             ]),
+        ]);
+
+        return $comprobante->fresh();
+    }
+
+    /**
+     * Emitir Nota de Crédito a SUNAT y registrar el ComprobanteElectronico asociado.
+     */
+    public function emitirNotaCredito(NotaCredito $notaCredito): ComprobanteElectronico
+    {
+        $venta = $notaCredito->venta;
+
+        // Crear o recuperar comprobante electrónico de la nota de crédito
+        $comprobante = ComprobanteElectronico::create([
+            'venta_id' => $venta->id,
+            'tipo' => 'nota_credito',
+            'serie' => $notaCredito->serie,
+            'numero' => $notaCredito->numero,
+            'estado' => EstadoComprobante::ENVIANDO,
+            'intentos' => 1,
+            'ultimo_intento_en' => now(),
+        ]);
+
+        $notaCredito->update([
+            'comprobante_electronico_id' => $comprobante->id,
+        ]);
+
+        $resultado = $this->emisor->emitirNotaCredito($notaCredito);
+
+        $comprobante->update([
+            'estado' => $resultado->estado,
+            'payload_json' => $resultado->payload,
+            'respuesta_json' => $resultado->respuesta,
+            'enlace_pdf' => $resultado->enlacePdf,
+            'enlace_xml' => $resultado->enlaceXml,
+            'enlace_cdr' => $resultado->enlaceCdr,
+            'codigo_qr' => $resultado->codigoQr,
+            'hash' => $resultado->hash,
+            'codigo_sunat' => $resultado->codigoSunat,
+            'mensaje_sunat' => $resultado->mensaje,
+            'aceptado_en' => $resultado->exito ? now() : null,
+        ]);
+
+        $notaCredito->update([
+            'estado' => $resultado->exito ? 'aceptada' : ($resultado->estado === EstadoComprobante::RECHAZADO ? 'rechazada' : 'error'),
         ]);
 
         return $comprobante->fresh();
