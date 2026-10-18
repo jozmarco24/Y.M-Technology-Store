@@ -4,7 +4,10 @@ namespace App\Providers\Filament;
 
 use App\Filament\Widgets\ProductosBajoStockWidget;
 use App\Filament\Widgets\StatsInventarioOverview;
+use App\Filament\Widgets\StatsVentasOverview;
+use App\Filament\Widgets\TopProductosVendidosWidget;
 use App\Filament\Widgets\UltimasComprasRecibidasWidget;
+use App\Filament\Widgets\VentasUltimos30DiasChart;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -39,7 +42,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                StatsVentasOverview::class,
                 StatsInventarioOverview::class,
+                VentasUltimos30DiasChart::class,
+                TopProductosVendidosWidget::class,
                 ProductosBajoStockWidget::class,
                 UltimasComprasRecibidasWidget::class,
             ])
