@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\EstadoVenta;
 use App\Enums\TipoComprobanteVenta;
 use BadMethodCallException;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,25 +23,25 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property int $cliente_id
  * @property int $vendedor_id
  * @property int $caja_sesion_id
- * @property \App\Enums\TipoComprobanteVenta $tipo_comprobante
+ * @property TipoComprobanteVenta $tipo_comprobante
  * @property string $serie_comprobante
  * @property int $numero_comprobante
  * @property float $subtotal
  * @property float $descuento
  * @property float $igv
  * @property float $total
- * @property \App\Enums\EstadoVenta $estado
+ * @property EstadoVenta $estado
  * @property string|null $observaciones
  * @property int|null $anulada_por
- * @property \Carbon\Carbon|null $anulada_en
+ * @property Carbon|null $anulada_en
  * @property string|null $motivo_anulacion
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \Carbon\Carbon|null $deleted_at
- * @property \App\Models\Cliente|null $cliente
- * @property \App\Models\User|null $vendedor
- * @property \App\Models\User|null $anulador
- * @property \App\Models\CajaSesion|null $cajaSesion
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property Cliente|null $cliente
+ * @property User|null $vendedor
+ * @property User|null $anulador
+ * @property CajaSesion|null $cajaSesion
  */
 class Venta extends Model
 {
@@ -131,6 +132,16 @@ class Venta extends Model
     public function cajaSesion(): BelongsTo
     {
         return $this->belongsTo(CajaSesion::class, 'caja_sesion_id');
+    }
+
+    public function esCompletada(): bool
+    {
+        return $this->estado === EstadoVenta::COMPLETADA;
+    }
+
+    public function esAnulada(): bool
+    {
+        return $this->estado === EstadoVenta::ANULADA;
     }
 
     public function detalles(): HasMany

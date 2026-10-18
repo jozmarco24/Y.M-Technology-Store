@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\MetodoPago;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,12 +13,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property int $id
  * @property int $venta_id
- * @property \App\Enums\MetodoPago $metodo
+ * @property MetodoPago $metodo
  * @property float $monto
  * @property string|null $referencia
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \App\Models\Venta|null $venta
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Venta|null $venta
  */
 class VentaPago extends Model
 {

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\MetodoPago;
 use App\Enums\TipoMovimientoCaja;
 use BadMethodCallException;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,14 +15,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property int $id
  * @property int $caja_sesion_id
- * @property \App\Enums\TipoMovimientoCaja $tipo
+ * @property TipoMovimientoCaja $tipo
  * @property string $concepto
  * @property float $monto
- * @property string|null $metodo_pago
+ * @property MetodoPago|null $metodo_pago
  * @property int|null $venta_id
  * @property int $user_id
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class CajaMovimiento extends Model
 {
@@ -42,6 +44,7 @@ class CajaMovimiento extends Model
     {
         return [
             'tipo' => TipoMovimientoCaja::class,
+            'metodo_pago' => MetodoPago::class,
             'monto' => 'decimal:2',
         ];
     }

@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\TipoComprobanteVenta;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id
- * @property \App\Enums\TipoComprobanteVenta $tipo_comprobante
+ * @property TipoComprobanteVenta $tipo_comprobante
  * @property string $serie
  * @property int $correlativo_actual
  * @property bool $activo
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class SerieComprobante extends Model
 {

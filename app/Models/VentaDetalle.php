@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,11 +20,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float $descuento
  * @property float $subtotal
  * @property float $costo_unitario
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \App\Models\Venta|null $venta
- * @property \App\Models\Producto|null $producto
- * @property \App\Models\Serie|null $serie
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Venta|null $venta
+ * @property Producto|null $producto
+ * @property Serie|null $serie
  */
 class VentaDetalle extends Model
 {

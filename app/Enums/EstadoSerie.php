@@ -37,7 +37,7 @@ enum EstadoSerie: string
         };
     }
 
-    public function puedePasarA(self $destino): bool
+    public function puedePasarA(self $destino, bool $esAnulacionVenta = false): bool
     {
         if ($this === $destino) {
             return false;
@@ -46,7 +46,9 @@ enum EstadoSerie: string
         return match ($this) {
             self::DISPONIBLE => in_array($destino, [self::RESERVADA, self::VENDIDA, self::BAJA], true),
             self::RESERVADA => in_array($destino, [self::DISPONIBLE, self::VENDIDA, self::BAJA], true),
-            self::VENDIDA => in_array($destino, [self::DISPONIBLE, self::EN_GARANTIA, self::DEVUELTA], true),
+            self::VENDIDA => $esAnulacionVenta
+                ? in_array($destino, [self::DISPONIBLE, self::EN_GARANTIA, self::DEVUELTA], true)
+                : in_array($destino, [self::EN_GARANTIA, self::DEVUELTA], true),
             self::EN_GARANTIA => in_array($destino, [self::DISPONIBLE, self::DEVUELTA, self::BAJA], true),
             self::DEVUELTA => in_array($destino, [self::DISPONIBLE, self::BAJA], true),
             self::BAJA => false,
