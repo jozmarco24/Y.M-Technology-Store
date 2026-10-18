@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\ProveedorResource\Pages;
 
 use App\Filament\Resources\ProveedorResource;
+use App\Models\Proveedor;
 use App\Services\ProveedorService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -23,7 +24,7 @@ class EditProveedor extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        /** @var \App\Models\Proveedor $record */
+        /** @var Proveedor $record */
         return app(ProveedorService::class)->actualizar($record, $data);
     }
 }

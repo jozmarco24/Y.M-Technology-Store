@@ -10,11 +10,13 @@ use App\Models\Serie;
 use App\Services\InventarioService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Throwable;
 
 class SerieResource extends Resource
@@ -118,19 +120,19 @@ class SerieResource extends Resource
                         $movimientos = $service->historialSerie($record);
 
                         return [
-                            \Filament\Infolists\Components\Section::make('Movimientos Registrados')
+                            Section::make('Movimientos Registrados')
                                 ->schema([
-                                    \Filament\Infolists\Components\RepeatableEntry::make('movimientos')
+                                    RepeatableEntry::make('movimientos')
                                         ->state($movimientos->toArray())
                                         ->schema([
-                                            \Filament\Infolists\Components\TextEntry::make('tipo')
+                                            TextEntry::make('tipo')
                                                 ->label('Tipo')
                                                 ->badge(),
-                                            \Filament\Infolists\Components\TextEntry::make('motivo')
+                                            TextEntry::make('motivo')
                                                 ->label('Motivo'),
-                                            \Filament\Infolists\Components\TextEntry::make('stock_resultante')
+                                            TextEntry::make('stock_resultante')
                                                 ->label('Stock Resultante'),
-                                            \Filament\Infolists\Components\TextEntry::make('created_at')
+                                            TextEntry::make('created_at')
                                                 ->label('Fecha')
                                                 ->dateTime('d/m/Y H:i'),
                                         ])->columns(4),

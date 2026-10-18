@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\CompraResource\Pages;
 
 use App\Filament\Resources\CompraResource;
+use App\Models\Compra;
 use App\Services\CompraService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -26,7 +27,7 @@ class EditCompra extends EditRecord
         $detalles = $data['detalles'] ?? null;
         unset($data['detalles']);
 
-        /** @var \App\Models\Compra $record */
+        /** @var Compra $record */
         return app(CompraService::class)->actualizarBorrador($record, $data, $detalles);
     }
 }

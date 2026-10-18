@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Filament\Resources\ProductoResource\RelationManagers;
 
 use App\Enums\EstadoSerie;
-use App\Models\Serie;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;

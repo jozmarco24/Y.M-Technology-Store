@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\CategoriaResource\Pages;
 
 use App\Filament\Resources\CategoriaResource;
+use App\Models\Categoria;
 use App\Services\CategoriaService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -23,7 +24,7 @@ class EditCategoria extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        /** @var \App\Models\Categoria $record */
+        /** @var Categoria $record */
         return app(CategoriaService::class)->actualizar($record, $data);
     }
 }

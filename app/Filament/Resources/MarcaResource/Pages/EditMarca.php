@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\MarcaResource\Pages;
 
 use App\Filament\Resources\MarcaResource;
+use App\Models\Marca;
 use App\Services\MarcaService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -23,7 +24,7 @@ class EditMarca extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        /** @var \App\Models\Marca $record */
+        /** @var Marca $record */
         return app(MarcaService::class)->actualizar($record, $data);
     }
 }

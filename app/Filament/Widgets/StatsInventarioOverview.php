@@ -33,7 +33,7 @@ class StatsInventarioOverview extends BaseWidget
         // Valor de inventario: Solo visible para usuarios con permiso 'costos.ver' (Admin)
         if (auth()->user()?->can('costos.ver')) {
             $valorInventario = (float) Serie::where('estado', EstadoSerie::DISPONIBLE)->sum('costo');
-            $stats[] = Stat::make('Valor del Inventario', 'S/ ' . number_format($valorInventario, 2))
+            $stats[] = Stat::make('Valor del Inventario', 'S/ '.number_format($valorInventario, 2))
                 ->description('Costo total de series en stock')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning');

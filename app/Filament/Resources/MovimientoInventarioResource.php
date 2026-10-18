@@ -7,6 +7,7 @@ namespace App\Filament\Resources;
 use App\Enums\TipoMovimiento;
 use App\Filament\Resources\MovimientoInventarioResource\Pages;
 use App\Models\MovimientoInventario;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -83,8 +84,8 @@ class MovimientoInventarioResource extends Resource
                     ->searchable(),
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        \Filament\Forms\Components\DatePicker::make('desde')->label('Desde'),
-                        \Filament\Forms\Components\DatePicker::make('hasta')->label('Hasta'),
+                        DatePicker::make('desde')->label('Desde'),
+                        DatePicker::make('hasta')->label('Hasta'),
                     ])
                     ->query(function ($query, array $data) {
                         return $query

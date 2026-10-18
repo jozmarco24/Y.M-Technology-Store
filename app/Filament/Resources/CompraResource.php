@@ -19,7 +19,6 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Throwable;
 
 class CompraResource extends Resource
@@ -141,15 +140,15 @@ class CompraResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('subtotal_preview')
                             ->label('Subtotal (Sin IGV)')
-                            ->content(fn (?Compra $record): string => 'S/ ' . number_format((float) ($record?->subtotal ?? 0), 2))
+                            ->content(fn (?Compra $record): string => 'S/ '.number_format((float) ($record?->subtotal ?? 0), 2))
                             ->visible(fn (): bool => auth()->user()?->can('costos.ver') ?? false),
                         Forms\Components\Placeholder::make('igv_preview')
                             ->label('IGV (18%)')
-                            ->content(fn (?Compra $record): string => 'S/ ' . number_format((float) ($record?->igv ?? 0), 2))
+                            ->content(fn (?Compra $record): string => 'S/ '.number_format((float) ($record?->igv ?? 0), 2))
                             ->visible(fn (): bool => auth()->user()?->can('costos.ver') ?? false),
                         Forms\Components\Placeholder::make('total_preview')
                             ->label('Total')
-                            ->content(fn (?Compra $record): string => 'S/ ' . number_format((float) ($record?->total ?? 0), 2))
+                            ->content(fn (?Compra $record): string => 'S/ '.number_format((float) ($record?->total ?? 0), 2))
                             ->visible(fn (): bool => auth()->user()?->can('costos.ver') ?? false),
                     ])->columns(3),
             ]);
