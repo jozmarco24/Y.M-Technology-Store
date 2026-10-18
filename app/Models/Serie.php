@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -69,5 +70,10 @@ class Serie extends Model
     public function movimientos(): HasMany
     {
         return $this->hasMany(MovimientoInventario::class, 'serie_id');
+    }
+
+    public function ventaDetalle(): HasOne
+    {
+        return $this->hasOne(VentaDetalle::class, 'serie_id');
     }
 }

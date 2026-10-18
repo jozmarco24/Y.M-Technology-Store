@@ -87,6 +87,13 @@ class SerieResource extends Resource
                     ->label('Compra Origen')
                     ->badge()
                     ->color('gray'),
+                Tables\Columns\TextColumn::make('ventaDetalle.venta.codigo')
+                    ->label('Venta')
+                    ->badge()
+                    ->color('success')
+                    ->placeholder('-')
+                    ->url(fn (Serie $record) => $record->ventaDetalle?->venta_id ? route('filament.admin.resources.ventas.view', $record->ventaDetalle->venta_id) : null)
+                    ->openUrlInNewTab(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('estado')
