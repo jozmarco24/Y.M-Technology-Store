@@ -23,6 +23,7 @@ use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Models\VentaPago;
 use App\Services\Facturacion\FacturacionService;
+use App\Services\Reportes\BaseReporteService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -421,6 +422,9 @@ class VentaService
 
             // 10. Generar garantías para cada serie vendida dentro de la misma transacción
             $this->garantiaService->generarParaVenta($venta);
+
+            // Invalidar caché de reportes y analítica
+            BaseReporteService::invalidarCache();
 
             return $venta->fresh(['cliente', 'vendedor', 'detalles.serie', 'detalles.producto', 'pagos', 'cajaSesion', 'comprobanteElectronico']);
         });

@@ -12,6 +12,7 @@ use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\Serie;
 use App\Models\User;
+use App\Services\Reportes\BaseReporteService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -124,6 +125,9 @@ class InventarioService
                 'recibido_por' => $usuario->id,
                 'recibido_en' => Carbon::now(),
             ]);
+
+            // Invalidar caché de reportes e inventario
+            BaseReporteService::invalidarCache();
 
             return $compra->fresh(['detalles.series']);
         });

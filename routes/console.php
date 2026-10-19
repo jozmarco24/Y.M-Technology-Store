@@ -37,3 +37,9 @@ Schedule::call(function () {
 
 // Conciliación de pagos cada hora
 Schedule::command('pagos:conciliar --dias=1')->hourly()->name('conciliar-pagos-pasarela');
+
+// Resumen semanal ejecutivo por correo los lunes a las 7:00 AM (Zona Lima)
+Schedule::command('reportes:resumen-semanal')
+    ->weeklyOn(1, '07:00')
+    ->timezone('America/Lima')
+    ->name('enviar-resumen-semanal-ejecutivo');
