@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class ClienteWeb extends Authenticatable
 {
@@ -65,5 +67,26 @@ class ClienteWeb extends Authenticatable
     public function pedidos(): HasMany
     {
         return $this->hasMany(Pedido::class, 'cliente_web_id');
+    }
+
+    /**
+     * Anonimiza los datos personales del cliente (derecho al olvido / cancelación),
+     * preservando la integridad referencial y comprobantes tributarios exigidos por SUNAT.
+     */
+    public function anonimizarDatos(): void
+    {
+        $idAnonimo = $this->id;
+
+        $this->update([
+            'nombre' => "Usuario Anonimizado #{$idAnonimo}",
+            'email' => "anonimo_{$idAnonimo}@eliminado.local",
+            'telefono' => null,
+            'password' => Hash::make(Str::random(32)),
+            'activo' => false,
+        ]);
+
+        // Anonimizar o borrar direcciones guardadas
+        $this->direcciones()->delete();
+        $this->delete(); // Soft delete
     }
 }

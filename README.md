@@ -317,9 +317,83 @@ Endpoints disponibles para integraciones externas y aplicaciones cliente:
 
 ---
 
+## 🛒 Módulos de Fase 4: Tienda Online, Pedidos, Pagos y Producción
+
+### 1. E-Commerce y Carrito de Compras
+- **Frontend Moderno**: Construido con Blade, Tailwind CSS y Livewire 3.
+  - Catálogo interactivo con filtrado dinámico por marcas, precio y categorías.
+  - Carrito persistente en sesión y base de datos con sincronización automática al iniciar sesión.
+  - Cupones de descuento (fijo y porcentual) con validación de vigencia, tope de usos y monto mínimo.
+- **Reservas Temporales y Prevención de Sobrevigilancia**:
+  - Al iniciar el checkout, el stock y las series se reservan atómicamente por 30 minutos mediante `lockForUpdate`.
+  - Tarea programada en cron `pedidos:expirar` que libera las reservas si el pago no se completa.
+- **Libro de Reclamaciones Virtual (`/reclamaciones`)**: Conforme al Código de Protección y Defensa del Consumidor (Indecopi), con generación de código correlativo `REC-000001` y envío de copia en PDF al consumidor.
+
+### 2. Flujo Completo: Pedido ➔ Pago ➔ Venta ➔ Comprobante ➔ Garantía
+
+```mermaid
+graph TD
+    A[Cliente: Checkout en Tienda] -->|Reserva Stock 30 min| B[Pedido Creado: Pendiente]
+    B --> C{Método de Pago}
+    C -->|Culqi / Tarjeta| D[Tokenización + Cargo Seguro]
+    C -->|Yape / Transferencia| E[Subida de Comprobante + Cola Validación]
+    D -->|Pago Exitoso / Webhook| F[Pedido: Pagado]
+    E -->|Admin Aprueba Pago| F
+    F -->|Transacción Atómica| G[Creación de Venta + Kárdex Vendido]
+    G -->|Cola Asíncrona: Facturación| H[Nubefact: Boleta / Factura Electrónica]
+    G -->|Generación Automática| I[Póliza de Garantía por Serie]
+    G -->|Cola Asíncrona: Correos| J[Email de Confirmación al Cliente]
+```
+
+### 3. Pasarela de Pagos Culqi y Pagos Manuales
+- **Integración Culqi Oficial**:
+  - Creación de cargo con token (`CulqiPasarela`).
+  - Detección de timeouts con re-consulta previa a reintentos para evitar dobles cobros accidentales.
+  - Soporte de reembolsos directos (`reembolsarCargo`).
+  - Endpoint seguro de Webhooks: `POST /webhooks/culqi` con validación de firma HMAC-SHA256, exclusión de CSRF e idempotencia.
+  - Documentación de alternativa **Niubiz** en `docs/PASARELAS.md`.
+- **Yape / Transferencias**:
+  - Subida de comprobante seguro (validación MIME, renombrado hash, almacenamiento protegido).
+  - Alerta en panel Filament si un pago manual supera las 2 horas sin confirmación.
+
+#### Tarjetas de Prueba Culqi (Entorno de Pruebas)
+| Tarjeta | CVV | Expira | Resultado Simulado |
+|---|---|---|---|
+| `4111 1111 1111 1111` | `123` | Fecha futura | ✅ Pago Aprobado |
+| `4000 0000 0000 0002` | `123` | Fecha futura | ❌ Tarjeta Rechazada |
+| `4000 0000 0000 0003` | `123` | Fecha futura | ❌ Fondos Insuficientes |
+| `4000 0000 0000 0004` | `123` | Fecha futura | ⚠️ Desafío 3D Secure |
+
+### 4. Endurecimiento de Seguridad
+- **Cabeceras HTTP de Seguridad (OWASP)**:
+  - `X-Frame-Options: SAMEORIGIN`
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Content-Security-Policy`: compatible con Culqi Checkout SDK, Niubiz y Google Fonts.
+- **Protección de Datos Personales (Ley N° 29733 - Perú)**:
+  - Checkbox de consentimiento explícito en registro de clientes web.
+  - Anonimización estricta bajo solicitud del cliente (`ClienteWeb::anonimizarDatos()`), protegiendo la identidad personal y preservando la integridad tributaria ante SUNAT.
+- **Prevención de Enumeración**: Slugs y tokens UUID para URLs públicas de pedidos y comprobantes.
+- **Sanitización de Logs**: Enmascaramiento de tokens, tarjetas y contraseñas.
+
+### 5. Operaciones, Monitoreo y Conciliación
+- **Comando de Salud (`php artisan tienda:salud`)**:
+  - Diagnostica conexión a PostgreSQL, espacio libre en disco (GB), estado de colas (`jobs`), estado de conexión con Nubefact y pasarela activa.
+  - Expuesto también en `GET /api/v1/salud` para monitoreo automatizado con token de administrador.
+- **Conciliación de Pagos (`php artisan pagos:conciliar`)**:
+  - Compara pagos en estado pendiente contra los registros reales de la pasarela y concilia ventas desfasadas.
+- **Documentos Operativos**:
+  - [RUNBOOK.md](docs/RUNBOOK.md): Guía de contingencias ante caídas de pasarela, Nubefact, saturación de disco o colas.
+  - [DESPLIEGUE.md](docs/DESPLIEGUE.md): Guía paso a paso para VPS Ubuntu con Nginx, PHP 8.3, PostgreSQL, Supervisor y Let's Encrypt.
+  - [RESPALDOS.md](docs/RESPALDOS.md): Estrategia de backups automatizados y restauración verificada.
+  - [PRELANZAMIENTO.md](docs/PRELANZAMIENTO.md): Checklist pre-producción.
+  - [PASARELAS.md](docs/PASARELAS.md): Referencia técnica Culqi y esqueleto Niubiz.
+
+---
+
 ## 🧪 Pruebas Automatizadas y Calidad
 
-Ejecutar la suite completa de pruebas (103 tests pasando de Fases 0, 1, 2 y 3):
+Ejecutar la suite completa de pruebas (133 tests pasando de Fases 0 a 4C):
 ```powershell
 php artisan test
 ```
@@ -333,4 +407,5 @@ Ejecutar análisis estático con Larastan / PHPStan (Nivel 5):
 ```powershell
 ./vendor/bin/phpstan analyse --memory-limit=1G
 ```
+
 

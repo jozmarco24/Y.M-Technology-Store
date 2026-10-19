@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Enums\EstadoPagoOnline;
 use App\Enums\EstadoPedido;
 use App\Enums\MetodoEntrega;
 use App\Enums\Pasarela;
@@ -275,6 +276,34 @@ class PedidoResource extends Resource
                         $actor = auth()->user();
                         $service->cancelar($record, $data['motivo'], $actor);
                         Notification::make()->title('Pedido cancelado y stock liberado')->danger()->send();
+                    }),
+
+                // Acción 6: Reembolsar
+                Tables\Actions\Action::make('reembolsar')
+                    ->label('Reembolsar')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('danger')
+                    ->visible(fn (Pedido $record) => in_array($record->estado, [EstadoPedido::PAGADO, EstadoPedido::REEMBOLSADO]) && (auth()->user()?->can('pedidos.reembolsar') ?? false))
+                    ->form([
+                        Forms\Components\TextInput::make('monto')
+                            ->label('Monto a Reembolsar (PEN)')
+                            ->numeric()
+                            ->default(fn (Pedido $record) => $record->total)
+                            ->required(),
+                        Forms\Components\Textarea::make('motivo')
+                            ->label('Motivo del Reembolso')
+                            ->required(),
+                    ])
+                    ->action(function (Pedido $record, array $data, PagoOnlineService $pagoService): void {
+                        $pago = $record->pagosOnline()->where('estado', EstadoPagoOnline::PAGADO)->latest()->first();
+                        if ($pago) {
+                            /** @var User $actor */
+                            $actor = auth()->user();
+                            $pagoService->reembolsar($pago, (float) $data['monto'], $data['motivo'], $actor);
+                            Notification::make()->title('Reembolso procesado exitosamente')->success()->send();
+                        } else {
+                            Notification::make()->title('No se encontró un pago confirmado para reembolsar')->danger()->send();
+                        }
                     }),
             ]);
     }

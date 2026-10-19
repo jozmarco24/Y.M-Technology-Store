@@ -387,6 +387,18 @@ class PagoOnlineService
     }
 
     /**
+     * Consultar el estado de un pago online ante la pasarela correspondiente.
+     *
+     * @return array<string, mixed>
+     */
+    public function consultar(PagoOnline $pagoOnline): array
+    {
+        $pasarela = $this->resolverPasarela($pagoOnline->pasarela);
+
+        return $pasarela->consultar($pagoOnline);
+    }
+
+    /**
      * Intenta re-reservar las mismas series del pedido si aún siguen disponibles.
      */
     protected function intentarReReservarSeries(Pedido $pedido): bool

@@ -7,6 +7,7 @@ use App\Http\Controllers\DocumentosImprimiblesController;
 use App\Http\Controllers\PosAuthController;
 use App\Http\Controllers\PosTicketController;
 use App\Http\Controllers\SeoController;
+use App\Http\Controllers\WebhookCulqiController;
 use App\Http\Middleware\EnsurePosAccess;
 use App\Livewire\Ecommerce\AuthCliente;
 use App\Livewire\Ecommerce\CarritoPagina;
@@ -34,6 +35,9 @@ Route::get('/pagina/{slug}', PaginaInformativa::class)->name('pagina.informativa
 // SEO
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('seo.robots');
+
+// Webhooks de Pasarelas (Excluidos de CSRF en bootstrap/app.php)
+Route::post('/webhooks/culqi', [WebhookCulqiController::class, 'handle'])->name('webhooks.culqi');
 
 // Autenticación de Clientes Web (guard cliente)
 Route::middleware('guest:cliente')->group(function () {
