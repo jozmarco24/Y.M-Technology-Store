@@ -439,3 +439,5 @@ Ejecutar análisis estático con Larastan / PHPStan (Nivel 5):
 
 
 
+#   Y . M - T e c h n o l o g y - S t o r e  
+ 
