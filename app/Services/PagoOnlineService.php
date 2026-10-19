@@ -11,6 +11,7 @@ use App\Enums\MetodoPago;
 use App\Enums\Pasarela;
 use App\Enums\TipoComprobanteVenta;
 use App\Enums\TipoDocumentoCliente;
+use App\Jobs\EnviarPagoConfirmadoEmailJob;
 use App\Models\Cliente;
 use App\Models\PagoOnline;
 use App\Models\Pedido;
@@ -253,6 +254,8 @@ class PagoOnlineService
                 'comentario' => "Pago confirmado vía {$pago->pasarela->etiqueta()}. Convertido a Venta {$venta->codigo}.",
                 'user_id' => null,
             ]);
+
+            EnviarPagoConfirmadoEmailJob::dispatch($pedido->id);
 
             return $pedido;
         });

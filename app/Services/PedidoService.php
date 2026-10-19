@@ -8,6 +8,9 @@ use App\Enums\EstadoPedido;
 use App\Enums\EstadoSerie;
 use App\Enums\MetodoEntrega;
 use App\Enums\TipoMovimiento;
+use App\Jobs\EnviarConfirmacionPedidoEmailJob;
+use App\Jobs\EnviarPedidoEntregadoEmailJob;
+use App\Jobs\EnviarPedidoEnviadoEmailJob;
 use App\Models\Carrito;
 use App\Models\Cliente;
 use App\Models\MovimientoInventario;
@@ -236,6 +239,9 @@ class PedidoService
             // 11. Vaciar carrito del cliente
             $this->carritoService->vaciar($carrito);
 
+            // Despachar Job de email de confirmación de pedido
+            EnviarConfirmacionPedidoEmailJob::dispatch($pedido->id);
+
             return $pedido;
         });
     }
@@ -353,12 +359,16 @@ class PedidoService
                 'tracking_codigo' => trim($trackingCodigo),
             ]);
 
-            return $this->cambiarEstado(
+            $resultado = $this->cambiarEstado(
                 $p,
                 EstadoPedido::ENVIADO,
                 "Enviado por courier {$courier} con guía de tracking: {$trackingCodigo}.",
                 $actor
             );
+
+            EnviarPedidoEnviadoEmailJob::dispatch($p->id);
+
+            return $resultado;
         });
     }
 
@@ -367,12 +377,16 @@ class PedidoService
      */
     public function marcarEntregado(Pedido $pedido, ?User $actor = null): Pedido
     {
-        return $this->cambiarEstado(
+        $resultado = $this->cambiarEstado(
             $pedido,
             EstadoPedido::ENTREGADO,
             'Pedido entregado satisfactoriamente al destinatario.',
             $actor
         );
+
+        EnviarPedidoEntregadoEmailJob::dispatch($pedido->id);
+
+        return $resultado;
     }
 
     /**
