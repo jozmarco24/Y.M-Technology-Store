@@ -72,13 +72,31 @@ class VentaService
             throw new InvalidArgumentException('Debe registrar al menos un método de pago.');
         }
 
-        // 1. Exige caja abierta del vendedor
-        $cajaSesion = CajaSesion::where('user_id', $vendedor->id)
-            ->where('estado', EstadoCaja::ABIERTA->value)
-            ->first();
+        $esCanalWeb = ($datos['canal'] ?? 'pos') === 'web';
+        $cajaSesion = null;
 
-        if ($cajaSesion === null) {
-            throw new RuntimeException("El vendedor {$vendedor->name} no tiene una sesión de caja abierta. Debe abrir caja antes de vender.");
+        if ($esCanalWeb) {
+            // Caja virtual WEB del sistema (abierta automáticamente si no existe)
+            $cajaSesion = CajaSesion::firstOrCreate(
+                [
+                    'user_id' => $vendedor->id,
+                    'observaciones' => 'CAJA_VIRTUAL_WEB',
+                    'estado' => EstadoCaja::ABIERTA->value,
+                ],
+                [
+                    'monto_apertura' => 0.00,
+                    'abierta_en' => Carbon::now(),
+                ]
+            );
+        } else {
+            // 1. Exige caja abierta del vendedor para POS
+            $cajaSesion = CajaSesion::where('user_id', $vendedor->id)
+                ->where('estado', EstadoCaja::ABIERTA->value)
+                ->first();
+
+            if ($cajaSesion === null) {
+                throw new RuntimeException("El vendedor {$vendedor->name} no tiene una sesión de caja abierta. Debe abrir caja antes de vender.");
+            }
         }
 
         return DB::transaction(function () use ($datos, $items, $pagos, $vendedor, $cajaSesion) {
@@ -301,6 +319,7 @@ class VentaService
                 'total' => $totalNetoVenta,
                 'estado' => EstadoVenta::COMPLETADA,
                 'observaciones' => $datos['observaciones'] ?? null,
+                'canal' => $datos['canal'] ?? 'pos',
             ]);
 
             // 7. Crear detalles y actualizar inventario / series
