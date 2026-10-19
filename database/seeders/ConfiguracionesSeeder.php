@@ -22,6 +22,12 @@ class ConfiguracionesSeeder extends Seeder
             ['clave' => 'tienda_telefono', 'valor' => '(01) 424-5566 / 998 877 665', 'descripcion' => 'Teléfonos de contacto'],
             ['clave' => 'tienda_email', 'valor' => 'ventas@tienda-syscopm.pe', 'descripcion' => 'Correo de ventas'],
             ['clave' => 'tienda_mensaje_pie', 'valor' => '¡Gracias por su compra! Revise su comprobante electrónico.', 'descripcion' => 'Mensaje al pie del ticket'],
+            // Configuraciones de Reportes y Analítica (Fase 5A)
+            ['clave' => 'dias_stock_muerto', 'valor' => '90', 'descripcion' => 'Días sin ventas para considerar un producto con stock como stock muerto'],
+            ['clave' => 'dias_cobertura_reposicion', 'valor' => '30', 'descripcion' => 'Días de cobertura deseada para la sugerencia de reposición'],
+            ['clave' => 'umbral_margen_bajo', 'valor' => '10', 'descripcion' => 'Porcentaje mínimo de margen para alertar ventas bajo margen'],
+            ['clave' => 'destinatarios_resumen_semanal', 'valor' => 'gerencia@tienda-syscopm.pe,administracion@tienda-syscopm.pe', 'descripcion' => 'Correos separados por coma para el resumen semanal'],
+            ['clave' => 'dia_resumen_semanal', 'valor' => 'Monday', 'descripcion' => 'Día de la semana para el envío del resumen ejecutivo'],
         ];
 
         foreach ($configs as $config) {

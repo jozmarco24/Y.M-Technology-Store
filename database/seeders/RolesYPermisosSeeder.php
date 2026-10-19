@@ -63,6 +63,9 @@ class RolesYPermisosSeeder extends Seeder
             // Reportes
             'reportes.ver',
             'reportes.ver_margen',
+            'reportes.ver_inventario',
+            'reportes.exportar',
+            'reportes.configurar',
             // Garantías y Devoluciones (Fase 3A)
             'garantias.ver',
             'devoluciones.solicitar',
@@ -129,6 +132,7 @@ class RolesYPermisosSeeder extends Seeder
             'servicio.ver',
             'pedidos.ver',
             'pedidos.gestionar',
+            'reportes.ver_inventario',
         ]);
 
         // Vendedor
@@ -147,6 +151,7 @@ class RolesYPermisosSeeder extends Seeder
             'servicio.entregar',
             'servicio.cobrar',
             'pedidos.ver',
+            'reportes.ver', // Solo sus propias ventas y caja
         ]);
 
         // Técnico
