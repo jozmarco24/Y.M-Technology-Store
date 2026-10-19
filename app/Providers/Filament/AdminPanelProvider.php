@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Widgets\ComprobantesAlertWidget;
 use App\Filament\Widgets\ProductosBajoStockWidget;
+use App\Filament\Widgets\ReportesDashboardStatsWidget;
 use App\Filament\Widgets\StatsInventarioOverview;
 use App\Filament\Widgets\StatsVentasOverview;
 use App\Filament\Widgets\TopProductosVendidosWidget;
@@ -44,6 +45,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 ComprobantesAlertWidget::class,
+                ReportesDashboardStatsWidget::class,
                 StatsVentasOverview::class,
                 StatsInventarioOverview::class,
                 VentasUltimos30DiasChart::class,

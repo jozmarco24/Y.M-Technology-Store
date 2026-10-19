@@ -22,11 +22,11 @@ class ReportesVentas extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $navigationGroup = 'Reportes';
 
-    protected static ?string $navigationLabel = 'Reporte de Ventas';
+    protected static ?string $navigationLabel = 'Reporte de Ventas (Legado)';
 
     protected static ?string $title = 'Reporte y Análisis de Ventas';
 

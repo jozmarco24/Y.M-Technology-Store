@@ -131,3 +131,52 @@ Todas las consultas y servicios derivan de una única fuente de verdad:
    - `idx_series_estado_producto` en `series(estado, producto_id)`.
    - `idx_movimientos_prod_fecha` en `movimientos_inventario(producto_id, created_at)`.
    - `idx_compra_detalles_prod_compra` en `compra_detalles(producto_id, compra_id)`.
+
+---
+
+## 7. Centro de Reportes en Filament (Fase 5B)
+
+El Centro de Reportes está organizado bajo el grupo de navegación **"Reportes"** en Filament 3.
+
+### 7.1 Páginas y Control de Accesos
+
+| Página | Ruta / Slug | Permiso Requerido | Restricciones de Visualización |
+| :--- | :--- | :--- | :--- |
+| **Resumen Ejecutivo** | `/admin/reportes/resumen-ejecutivo` | `reportes.ver_resumen` | Solo visible para `admin` o roles con permiso expreso. Muestra KPIs comerciales, alertas activas y comparativa con periodo anterior. |
+| **Rentabilidad** | `/admin/reportes/rentabilidad` | `reportes.ver_margen` | Oculta para vendedores y personal de almacén. Exclusivo para administradores y analistas financieros. |
+| **Inventario** | `/admin/reportes/inventario` | `reportes.ver_inventario` | Accesible por almacén y admin. El valor monetario de inventario y capital inmovilizado solo se muestra si tiene `reportes.ver_margen`. Incluye botón **"Crear compra borrador"** para reposición sugerida. |
+| **Ventas** | `/admin/reportes/ventas` | `reportes.ver_ventas` | KPIs de volumen, funnel web, participación por medio de pago y distribución horaria/semanal. |
+| **Compras** | `/admin/reportes/compras` | `reportes.ver_compras` | Desglose por proveedor, evolución de costo por SKU y comparativa de cotización entre proveedores. |
+| **Postventa** | `/admin/reportes/postventa` | `reportes.ver_postventa` | Tasa de fallas por modelo, tiempos de reparación y órdenes con retraso. |
+| **Caja** | `/admin/reportes/caja` | `reportes.ver_caja` | Descuadres al cierre de caja, anulaciones de venta y movimientos de egreso/ingreso manual. |
+| **Vendedores** | `/admin/reportes/vendedores` | `reportes.ver_vendedores` | Ranking por vendedor, ventas totales, descuentos y anulaciones. Margen visible solo con `reportes.ver_margen`. Comisiones visibles si `activar_comisiones = 1`. |
+| **Ajustes de Reportes** | `/admin/reportes/ajustes-reportes` | Solo `admin` | Parámetros operacionales de umbrales, destinatarios y prueba de correo. |
+
+### 7.2 Filtros Globales de Reporte
+Todas las pantallas de analítica heredan de `BaseReportePage`, disponiendo de:
+- **Atajos de fecha**: `hoy`, `7_dias`, `mes` (mes actual), `mes_anterior`, `anio` (año actual) y `personalizado`.
+- **Canal de Venta**: `todos`, `pos`, `web`.
+- **Comparar con periodo anterior**: Activa cálculo diferencial $\Delta\%$ con flechas verdes/rojas.
+- **Persistencia en URL**: Los parámetros `fechaDesde`, `fechaHasta` y `canal` viajan en el query string de Livewire para permitir marcadores o compartir enlaces.
+
+### 7.3 Exportaciones y Trazabilidad
+- Formatos disponibles: **CSV**, **Excel** (.xlsx vía Spout o PhpSpreadsheet) y **PDF** (vía DomPDF con encabezado oficial y fecha de generación).
+- Todo intento de exportación valida el permiso `reportes.exportar`.
+- **Audit Log**: Cada descarga genera un registro de auditoría en `activity_log` (`exportar_reporte`) registrando el usuario, nombre del reporte, formato y los filtros aplicados.
+- **Ocultamiento de Costos**: Si el usuario que exporta carece de `reportes.ver_margen`, las columnas de costo unitario, costo total y margen se eliminan de la estructura del archivo descargado.
+
+### 7.4 Parámetros Configurables (`Ajustes de Reportes`)
+- `dias_stock_muerto`: Días sin ventas para clasificar un producto como stock muerto (por defecto `90`).
+- `dias_cobertura_reposicion`: Días de cobertura histórica esperada (por defecto `30`).
+- `umbral_margen_bajo`: Porcentaje umbral de advertencia para margen comercial (por defecto `10%`).
+- `destinatarios_resumen_semanal`: Lista de correos separados por coma para el informe ejecutivo.
+- `dia_resumen_semanal`: Día de envío programado (`Monday`, `Friday`, `Saturday`).
+- `activar_comisiones`: Interruptor global para activar el cálculo de comisiones a la fuerza de ventas.
+
+### 7.5 Comando de Envío Programado
+Para generar y despachar el correo con el Resumen Ejecutivo semanal:
+```bash
+php artisan reportes:enviar-resumen-semanal
+```
+Este comando consulta los destinatarios configurados, procesa los KPIs de los últimos 7 días y encola el mailable con el informe a través del job `EnviarResumenSemanalEmailJob`.
+

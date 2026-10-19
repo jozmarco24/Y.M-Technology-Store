@@ -388,12 +388,41 @@ graph TD
   - [RESPALDOS.md](docs/RESPALDOS.md): Estrategia de backups automatizados y restauración verificada.
   - [PRELANZAMIENTO.md](docs/PRELANZAMIENTO.md): Checklist pre-producción.
   - [PASARELAS.md](docs/PASARELAS.md): Referencia técnica Culqi y esqueleto Niubiz.
+  - [REPORTES.md](docs/REPORTES.md): Definición matemática y operativa de métricas comerciales e inventario.
+
+---
+
+## 📊 Módulos de Fase 5: Centro de Reportes y Analítica Avanzada
+
+### 1. Servicios Especializados (`app/Services/Reportes/`)
+- **Resumen Ejecutivo**: KPIs de ventas, margen bruto, variaciones vs periodo anterior ($\Delta\%$) y panel de alertas tempranas.
+- **Rentabilidad**: Márgenes por producto, categoría, marca y vendedor con alerta de ventas bajo costo o margen crítico ($<10\%$).
+- **Inventario**: Valorización monetaria, stock muerto ($>90$ días), clasificación ABC de Pareto y reposición sugerida según demanda histórica.
+- **Ventas**: Comparativos anuales/mensuales, mapas de calor por hora, rendimiento POS vs Web y embudo del e-commerce.
+- **Compras**: Consolidado por proveedor, historial de costo de adquisición y comparativa entre cotizaciones.
+- **Postventa**: Tasa de fallas por modelo, tiempos medios de reparación y devoluciones por motivo.
+- **Caja**: Detección de descuadres al cierre por vendedor, anulaciones y transacciones de dinero manual.
+- **Vendedores**: Ranking comercial con comisiones activables mediante flag de configuración.
+
+### 2. Panel Administrativo en Filament 3
+- Grupo de navegación **"Reportes"** con permisos dedicados por área.
+- Barra superior de filtros reactivos: atajos de fecha (`hoy`, `7_dias`, `mes`, `mes_anterior`, `anio`), canal (`todos`, `pos`, `web`) y comparativa de periodo anterior persistentes en URL.
+- **Acción Rápida de Compra**: Generación directa de compras en borrador desde la tabla de sugerencias de reposición llamando a `CompraService`.
+- **Exportaciones Seguras**: Descargas en CSV, Excel y PDF con registro en `activity_log` y ocultamiento automático de costos para perfiles no-admin.
+- **Ajustes de Reportes**: Configuración dinámica de días de stock muerto, cobertura, umbral de margen y destinatarios del resumen semanal.
+- **Widget en Dashboard**: Métricas destacadas de margen del mes, capital inmovilizado y alertas activas conectadas directamente a sus reportes.
+
+### 3. Comandos Programados
+- Resumen ejecutivo semanal por correo:
+```powershell
+php artisan reportes:enviar-resumen-semanal
+```
 
 ---
 
 ## 🧪 Pruebas Automatizadas y Calidad
 
-Ejecutar la suite completa de pruebas (133 tests pasando de Fases 0 a 4C):
+Ejecutar la suite completa de pruebas (153 tests pasando de Fases 0 a 5B):
 ```powershell
 php artisan test
 ```
@@ -407,5 +436,6 @@ Ejecutar análisis estático con Larastan / PHPStan (Nivel 5):
 ```powershell
 ./vendor/bin/phpstan analyse --memory-limit=1G
 ```
+
 
 
