@@ -110,14 +110,55 @@ class ProductoResource extends Resource
                                     ->columnSpanFull(),
                             ]),
 
-                        Forms\Components\Tabs\Tab::make('Imagen')
+                        Forms\Components\Tabs\Tab::make('Imagen y Galería')
                             ->schema([
                                 Forms\Components\FileUpload::make('imagen')
-                                    ->label('Imagen del Producto')
+                                    ->label('Imagen Principal')
                                     ->image()
                                     ->directory('productos')
                                     ->columnSpanFull(),
+                                Forms\Components\Repeater::make('imagenes')
+                                    ->relationship('imagenes')
+                                    ->schema([
+                                        Forms\Components\FileUpload::make('ruta')
+                                            ->label('Imagen')
+                                            ->image()
+                                            ->directory('productos/galeria')
+                                            ->required(),
+                                        Forms\Components\TextInput::make('orden')
+                                            ->numeric()
+                                            ->default(0),
+                                        Forms\Components\Toggle::make('es_principal')
+                                            ->label('¿Es Principal?')
+                                            ->default(false),
+                                    ])
+                                    ->columns(3)
+                                    ->orderColumn('orden')
+                                    ->columnSpanFull(),
                             ]),
+
+                        Forms\Components\Tabs\Tab::make('Tienda Online')
+                            ->schema([
+                                Forms\Components\Toggle::make('publicado_web')
+                                    ->label('Publicado en Web')
+                                    ->helperText('Permite que el producto aparezca en el catálogo público online.')
+                                    ->default(false),
+                                Forms\Components\Toggle::make('destacado')
+                                    ->label('Producto Destacado')
+                                    ->helperText('Aparece en la página principal y banners de destacados.')
+                                    ->default(false),
+                                Forms\Components\TextInput::make('peso_kg')
+                                    ->label('Peso aproximado (Kg)')
+                                    ->numeric()
+                                    ->suffix('Kg'),
+                                Forms\Components\TextInput::make('meta_titulo')
+                                    ->label('Meta Título (SEO)')
+                                    ->maxLength(255),
+                                Forms\Components\Textarea::make('meta_descripcion')
+                                    ->label('Meta Descripción (SEO)')
+                                    ->rows(3)
+                                    ->columnSpanFull(),
+                            ])->columns(2),
                     ])
                     ->columnSpanFull(),
             ]);

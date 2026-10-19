@@ -6,25 +6,45 @@ use App\Http\Controllers\ConsultaGarantiaPublicaController;
 use App\Http\Controllers\DocumentosImprimiblesController;
 use App\Http\Controllers\PosAuthController;
 use App\Http\Controllers\PosTicketController;
+use App\Http\Controllers\SeoController;
 use App\Http\Middleware\EnsurePosAccess;
+use App\Livewire\Ecommerce\AuthCliente;
+use App\Livewire\Ecommerce\CarritoPagina;
+use App\Livewire\Ecommerce\Catalogo;
+use App\Livewire\Ecommerce\Checkout;
+use App\Livewire\Ecommerce\DetalleProducto;
+use App\Livewire\Ecommerce\Inicio;
+use App\Livewire\Ecommerce\LibroReclamaciones;
+use App\Livewire\Ecommerce\MiCuenta;
+use App\Livewire\Ecommerce\PaginaInformativa;
+use App\Livewire\Ecommerce\SeguimientoPedido;
 use App\Livewire\Pos\Venta as PosVenta;
-use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
-// Redirección de la raíz según autenticación y rol
-Route::get('/', function () {
-    if (auth()->check()) {
-        /** @var User $user */
-        $user = auth()->user();
-        if ($user->hasRole('vendedor')) {
-            return redirect()->route('pos.index');
-        }
+// Tienda Online Pública
+Route::get('/', Inicio::class)->name('inicio');
+Route::get('/catalogo', Catalogo::class)->name('catalogo');
+Route::get('/producto/{slug}', DetalleProducto::class)->name('producto.detalle');
+Route::get('/carrito', CarritoPagina::class)->name('carrito');
+Route::get('/checkout', Checkout::class)->name('checkout');
+Route::get('/pedido/{codigo}', SeguimientoPedido::class)->name('pedido.seguimiento');
+Route::get('/libro-reclamaciones', LibroReclamaciones::class)->name('libro.reclamaciones');
+Route::get('/pagina/{slug}', PaginaInformativa::class)->name('pagina.informativa');
 
-        return redirect('/admin');
-    }
+// SEO
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('seo.robots');
 
-    return redirect()->route('pos.login');
+// Autenticación de Clientes Web (guard cliente)
+Route::middleware('guest:cliente')->group(function () {
+    Route::get('/cliente/login', AuthCliente::class)->name('cliente.login');
 });
+Route::post('/cliente/logout', [AuthCliente::class, 'logout'])
+    ->middleware('auth:cliente')
+    ->name('cliente.logout');
+Route::get('/mi-cuenta', MiCuenta::class)
+    ->middleware('auth:cliente')
+    ->name('mi-cuenta');
 
 // Autenticación del POS
 Route::get('/pos/login', [PosAuthController::class, 'showLogin'])->name('pos.login');
