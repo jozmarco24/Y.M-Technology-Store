@@ -400,7 +400,8 @@ class InventarioReporteService extends BaseReporteService
             $acumulado += $valor;
             $porcentajeAcumulado = $totalGeneral > 0 ? ($acumulado / $totalGeneral) * 100 : 100.0;
 
-            if ($porcentajeAcumulado <= 80.0) {
+            // El primer elemento o los que caen dentro del primer 80% pertenecen a la Clase A
+            if ($porcentajeAcumulado <= 80.0 || $acumulado === $valor) {
                 $clase = 'A';
             } elseif ($porcentajeAcumulado <= 95.0) {
                 $clase = 'B';

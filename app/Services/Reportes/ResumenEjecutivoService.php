@@ -68,10 +68,10 @@ class ResumenEjecutivoService extends BaseReporteService
         // 3. Top productos
         $topProductos = $this->rentabilidadService->margenPorProducto($usuario, $fechaInicio, $fechaFin, null, 5);
 
-        // 4. Inventario crítico
+        // 4. Inventario crítico (productos activos con stock disponible <= stock_minimo)
         $stockBajoCount = DB::table('productos')
             ->where('activo', true)
-            ->whereRaw('stock_disponible <= stock_minimo')
+            ->whereRaw('(SELECT COUNT(*) FROM series WHERE series.producto_id = productos.id AND series.estado = \'disponible\') <= productos.stock_minimo')
             ->count();
 
         $stockMuertoList = $this->inventarioService->stockMuerto($usuario);
