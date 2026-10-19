@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Filament\Resources\DevolucionResource\Pages;
+
+use App\Filament\Resources\DevolucionResource;
+use Filament\Resources\Pages\ViewRecord;
+
+class ViewDevolucion extends ViewRecord
+{
+    protected static string $resource = DevolucionResource::class;
+}

@@ -216,6 +216,23 @@
         </div>
     @endif
 
+    <!-- CONSULTA DE GARANTÍA & PIE DE TICKET -->
+    <div class="divider"></div>
+    <div class="text-center" style="margin: 8px 0;">
+        <div class="bold" style="font-size: 10px;">CONSULTA TU GARANTÍA EN LÍNEA:</div>
+        <div style="font-size: 9px; color: #1e3a8a; word-break: break-all; margin-top: 2px;">
+            {{ url('/garantia') }}
+        </div>
+        <div style="margin-top: 5px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data={{ urlencode(url('/garantia')) }}" 
+                 alt="QR Garantía" 
+                 style="width: 80px; height: 80px; margin: 0 auto; display: block;" />
+        </div>
+        <div style="font-size: 8px; color: #666; margin-top: 2px;">
+            Escanea para consultar cobertura y estado de servicio técnico
+        </div>
+    </div>
+
     <div class="divider"></div>
 
     <!-- PIE DE TICKET -->

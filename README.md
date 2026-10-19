@@ -253,9 +253,73 @@ Y agrega la tarea programada en el crontab del servidor (`crontab -e -u www-data
 
 ---
 
+## 🛡️ Módulos de Fase 3: Garantías, Devoluciones y Servicio Técnico
+
+### 1. Sistema de Garantías
+- **Jerarquía y Snapshot de Condiciones**:
+  1. *Específica de Producto* (si está configurada).
+  2. *Por Categoría*.
+  3. *General de la Tienda* (fallback por defecto: 12 meses y 7 días calendario para cambio directo).
+  - Al emitirse la venta, las condiciones exactas se congelan en un snapshot inmutable dentro del registro de la garantía (`condiciones_snapshot`).
+- **Estados de Garantía (`EstadoGarantia`)**: `vigente`, `por_vencer` (<= 30 días), `vencida`, `anulada`.
+- **Tarea Programada / Comando**:
+  ```powershell
+  php artisan garantias:marcar-vencidas
+  ```
+- **Consulta en POS y Filament**: Buscador por número de serie con cálculo en tiempo real de días restantes y accesos directos para *Iniciar Devolución / Cambio* o *Recibir en Servicio Técnico*.
+
+### 2. Devoluciones, Cambios y Notas de Crédito
+- **Tipos de Devolución (`TipoDevolucion`)**:
+  - `devolucion_dinero`: Reembolso al cliente generando un egreso automático en la caja abierta del usuario.
+  - `cambio_producto`: Canje por otra serie disponible del mismo modelo u otro producto, liquidando diferencias monetarias a cobrar o devolver. La serie original pasa al destino configurado (`disponible`, `en_garantia` o `baja`) y la nueva se marca como `vendida` con su propia póliza de garantía.
+  - `nota_credito`: Emisión electrónica vinculada a boleta o factura previa, enviada a SUNAT mediante el pipeline tolerante a fallos de Nubefact.
+- **Flujo de Aprobación**:
+  - Vendedor: Registra y envía la solicitud en el POS (`solicitada`).
+  - Administrador: Aprueba (`aprobada`), rechaza con motivo obligatorio (`rechazada`) o completa la devolución (`completada`).
+- **Documentos Imprimibles**:
+  - Constancia de devolución/cambio en formato A4 y Ticket térmico 80 mm con firma de conformidad.
+
+### 3. Servicio Técnico Postventa
+- **Órdenes de Servicio (`ordenes_servicio`)**:
+  - Código único correlativo `OS-000001`.
+  - Tipos: `garantia` (costo S/ 0.00 para el cliente, asumido por la empresa) o `pago` (cotización, aprobación y cobro en POS).
+  - Máquina de estados: `recibido` ➔ `diagnostico` ➔ `esperando_aprobacion` ➔ `esperando_repuesto` ➔ `en_reparacion` ➔ `reparado` ➔ `entregado` (o `sin_solucion` / `cancelado`).
+- **Tablero Kanban en Filament**: Vista interactiva por columnas de estado con actualización mediante `OrdenServicioService::cambiarEstado`.
+- **Gestión de Repuestos y Kárdex**: Salidas automáticas de inventario con motivo `servicio_tecnico`, costeadas en la orden.
+- **Notificaciones Automáticas**: Envío de correo electrónico en segundo plano al marcar la orden como reparada (`NotificarOrdenReparadaEmailJob`).
+- **Documentos Imprimibles**:
+  - Orden de Ingreso A4 con código QR y cláusulas de servicio.
+  - Cotización formal para órdenes de pago.
+  - Acta de entrega con certificado de garantía sobre la reparación efectuada.
+
+### 4. Consulta Pública de Garantía (`/garantia`)
+- Ruta web pública de autoconsulta sin necesidad de iniciar sesión.
+- **Seguridad**:
+  - Requiere obligatoriamente **Número de Serie + DNI/RUC** del comprador.
+  - Rate limiting estricto (`throttle:5,1`, 5 peticiones por minuto por IP).
+  - Protección anti-bot con campo señuelo (*honeypot*).
+  - Respuestas genéricas ante discordancia para evitar enumeración de datos.
+  - Estricta reserva de datos personales y costos: solo muestra producto, vigencia de garantía y avance del servicio técnico.
+- Acceso rápido vía enlace y código QR impreso en el ticket de venta del POS.
+
+### 5. API REST v1 (Sanctum)
+Endpoints disponibles para integraciones externas y aplicaciones cliente:
+
+| Método | Endpoint | Descripción | Restricciones de Costo |
+|---|---|---|---|
+| `GET` | `/api/v1/productos` | Catálogo con stock disponible y filtros | Oculta `precio_compra` a no-admin |
+| `GET` | `/api/v1/productos/{id}` | Detalle de producto | Oculta `precio_compra` a no-admin |
+| `GET` | `/api/v1/series/{numero}` | Consulta de estado de serie física | Información operativa sin costos |
+| `GET` | `/api/v1/garantias/{numero_serie}` | Estado y vigencia de garantía | Datos de cobertura |
+| `GET` | `/api/v1/ordenes-servicio` | Listado con filtros de servicio técnico | Oculta costos a no-admin |
+| `GET` | `/api/v1/ordenes-servicio/{codigo}` | Detalle de orden técnica | `costo_estimado` y `costo_final` solo para admin |
+| `POST` | `/api/v1/devoluciones` | Registrar solicitud de devolución | Autenticado con token Sanctum |
+
+---
+
 ## 🧪 Pruebas Automatizadas y Calidad
 
-Ejecutar la suite completa de pruebas (66 tests de Fase 0, Fase 1 y Fase 2):
+Ejecutar la suite completa de pruebas (103 tests pasando de Fases 0, 1, 2 y 3):
 ```powershell
 php artisan test
 ```
@@ -269,3 +333,4 @@ Ejecutar análisis estático con Larastan / PHPStan (Nivel 5):
 ```powershell
 ./vendor/bin/phpstan analyse --memory-limit=1G
 ```
+

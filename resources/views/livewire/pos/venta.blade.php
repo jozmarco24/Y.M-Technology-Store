@@ -64,6 +64,18 @@
                 </button>
             @endif
 
+            <button wire:click="abrirModalGarantia"
+                class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition flex items-center space-x-1">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <span>Garantías</span>
+            </button>
+
+            <button wire:click="abrirModalServicio"
+                class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition flex items-center space-x-1">
+                <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+                <span>Servicio Técnico</span>
+            </button>
+
             <button wire:click="$set('mostrarModalHistorial', true)"
                 class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition flex items-center space-x-1">
                 <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -811,4 +823,356 @@
         </div>
     @endif
 
+    <!-- ========================================================================= -->
+    <!-- MODAL DE CONSULTA DE GARANTÍA EN POS -->
+    <!-- ========================================================================= -->
+    @if ($mostrarModalGarantia)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+                <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-800/50">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        <h3 class="font-bold text-base text-white">Consultar Garantía por Serie</h3>
+                    </div>
+                    <button wire:click="$set('mostrarModalGarantia', false)" class="text-slate-400 hover:text-white">&times;</button>
+                </div>
+
+                <div class="p-5 space-y-4">
+                    <form wire:submit.prevent="consultarGarantiaEnPos" class="flex gap-2">
+                        <input type="text" wire:model.defer="busquedaGarantiaSerie" 
+                               placeholder="Escanear o ingresar número de serie..." 
+                               class="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 uppercase font-mono">
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition">
+                            Consultar
+                        </button>
+                    </form>
+
+                    @if ($resultadoGarantia)
+                        <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-4 space-y-3 text-xs">
+                            <div class="flex justify-between items-start border-b border-slate-700 pb-2">
+                                <div>
+                                    <span class="text-slate-400 block">Producto:</span>
+                                    <span class="font-bold text-white text-sm">{{ $resultadoGarantia['producto'] }}</span>
+                                    <span class="font-mono text-slate-400 block text-[11px]">S/N: {{ $resultadoGarantia['serie'] }}</span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold {{ ($resultadoGarantia['vigente'] ?? false) ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800' }}">
+                                    {{ strtoupper($resultadoGarantia['estado'] ?? 'DESCONOCIDO') }}
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-slate-300">
+                                <div><strong>Cliente:</strong> {{ $resultadoGarantia['cliente'] ?? 'N/A' }}</div>
+                                <div><strong>Venta:</strong> {{ $resultadoGarantia['venta_codigo'] ?? 'N/A' }} ({{ $resultadoGarantia['fecha_venta'] ?? 'N/A' }})</div>
+                                <div><strong>Vence:</strong> {{ $resultadoGarantia['fecha_fin'] ?? 'N/A' }}</div>
+                                <div><strong>Días Restantes:</strong> <span class="font-bold {{ ($resultadoGarantia['dias_restantes'] ?? 0) > 0 ? 'text-emerald-400' : 'text-rose-400' }}">{{ $resultadoGarantia['dias_restantes'] ?? 0 }} días</span></div>
+                            </div>
+
+                            @if (!empty($resultadoGarantia['condiciones']))
+                                <div class="bg-slate-900/80 p-2.5 rounded border border-slate-700/60 text-[11px] text-slate-300">
+                                    <strong>Condiciones pactadas:</strong> {{ $resultadoGarantia['condiciones'] }}
+                                </div>
+                            @endif
+
+                            <div class="pt-2 flex gap-2">
+                                <button wire:click="iniciarDevolucionDesdeGarantia" 
+                                        class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition text-center">
+                                    Iniciar Devolución / Cambio
+                                </button>
+                                <button wire:click="recibirServicioDesdeGarantia" 
+                                        class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition text-center">
+                                    Recibir en Servicio Técnico
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- MODAL ASISTENTE DE DEVOLUCIÓN / CAMBIO (PASO A PASO) -->
+    <!-- ========================================================================= -->
+    @if ($mostrarModalDevolucion && $ventaDevolucion)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-800/50">
+                    <div>
+                        <h3 class="font-bold text-base text-white flex items-center gap-2">
+                            <span>Asistente de Devolución & Cambio</span>
+                            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">Venta: {{ $ventaDevolucion->codigo }}</span>
+                        </h3>
+                        <div class="text-[11px] text-slate-400 mt-0.5">Paso {{ $pasoDevolucion }} de 5: 
+                            @if($pasoDevolucion === 1) Seleccionar Ítems y Saldo Devolvible
+                            @elseif($pasoDevolucion === 2) Motivo y Estado Físico
+                            @elseif($pasoDevolucion === 3) Modalidad (Dinero, Cambio o Nota de Crédito)
+                            @elseif($pasoDevolucion === 4) Escaneo de Serie Nueva
+                            @else Confirmación Final
+                            @endif
+                        </div>
+                    </div>
+                    <button wire:click="$set('mostrarModalDevolucion', false)" class="text-slate-400 hover:text-white">&times;</button>
+                </div>
+
+                <div class="p-5 flex-1 overflow-y-auto space-y-4">
+                    @if ($pasoDevolucion === 1)
+                        <div class="space-y-2">
+                            <p class="text-xs text-slate-400">Seleccione los productos o series a devolver de esta venta:</p>
+                            @foreach($itemsDevolucion as $k => $item)
+                                <label class="flex items-center justify-between p-3 rounded-xl border {{ !empty($item['seleccionado']) ? 'bg-amber-950/20 border-amber-600' : 'bg-slate-800/40 border-slate-700' }} cursor-pointer">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="checkbox" wire:model="itemsDevolucion.{{ $k }}.seleccionado" class="rounded text-amber-500 focus:ring-0">
+                                        <div>
+                                            <div class="font-bold text-sm text-white">{{ $item['producto_nombre'] }}</div>
+                                            <div class="text-xs text-slate-400 font-mono">
+                                                @if($item['serie_numero']) S/N: {{ $item['serie_numero'] }} @else Cant. disponible: {{ $item['cantidad_disponible'] }} @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs text-slate-400 block">Saldo Devolvible:</span>
+                                        <span class="font-bold text-emerald-400 font-mono">S/ {{ number_format((float)$item['monto_disponible'], 2) }}</span>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+
+                    @elseif ($pasoDevolucion === 2)
+                        <div class="space-y-4 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Motivo Principal:</label>
+                                <select wire:model="motivoDevolucionInput" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                                    <option value="defecto_fabrica">Defecto de fábrica (Aplica cobertura de garantía)</option>
+                                    <option value="arrepentimiento">Arrepentimiento de compra / Cambio voluntario</option>
+                                    <option value="error_venta">Error en venta o digitación</option>
+                                    <option value="producto_incorrecto">Producto entregado no corresponde</option>
+                                    <option value="otro">Otro motivo</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Detalle o Explicación del Motivo *:</label>
+                                <textarea wire:model.defer="detalleMotivoDevolucion" rows="2" placeholder="Detalle la falla o causa..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"></textarea>
+                            </div>
+
+                            <div class="space-y-2 pt-2 border-t border-slate-800">
+                                <span class="font-semibold text-slate-300 block">Estado Físico del Equipo Recibido:</span>
+                                @foreach($itemsDevolucion as $k => $item)
+                                    @if(!empty($item['seleccionado']))
+                                        <div class="p-3 bg-slate-800/60 border border-slate-700 rounded-lg grid grid-cols-2 gap-3 items-center">
+                                            <div class="font-medium text-slate-200">{{ $item['producto_nombre'] }} ({{ $item['serie_numero'] ?? 'Sin serie' }})</div>
+                                            <div>
+                                                <select wire:model="itemsDevolucion.{{ $k }}.estado_fisico" class="w-full py-1.5 px-2 bg-slate-900 border border-slate-700 rounded text-white text-xs">
+                                                    <option value="nuevo_sellado">Nuevo y Sellado (Pasa a disponible)</option>
+                                                    <option value="abierto_ok">Abierto en Buen Estado (Pasa a disponible)</option>
+                                                    <option value="con_defecto">Con Defecto de Fábrica (Pasa a garantía)</option>
+                                                    <option value="danado">Dañado / Golpeado (Pasa a baja)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+
+                    @elseif ($pasoDevolucion === 3)
+                        <div class="space-y-3">
+                            <span class="text-xs text-slate-400 block">Seleccione el tipo de resolución para el cliente:</span>
+                            
+                            <label class="flex items-center justify-between p-3.5 rounded-xl border {{ $tipoDevolucionInput === 'devolucion_dinero' ? 'bg-rose-950/20 border-rose-600' : 'bg-slate-800/40 border-slate-700' }} cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="radio" wire:model="tipoDevolucionInput" value="devolucion_dinero" class="text-rose-500 focus:ring-0">
+                                    <div>
+                                        <div class="font-bold text-sm text-white">Devolución de Dinero</div>
+                                        <div class="text-xs text-slate-400">Registra un egreso en la caja abierta actual del vendedor</div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center justify-between p-3.5 rounded-xl border {{ $tipoDevolucionInput === 'cambio_producto' ? 'bg-blue-950/20 border-blue-600' : 'bg-slate-800/40 border-slate-700' }} cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="radio" wire:model="tipoDevolucionInput" value="cambio_producto" class="text-blue-500 focus:ring-0">
+                                    <div>
+                                        <div class="font-bold text-sm text-white">Cambio por Otro Producto / Serie</div>
+                                        <div class="text-xs text-slate-400">Permite seleccionar la nueva serie y liquidar diferencias</div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center justify-between p-3.5 rounded-xl border {{ $tipoDevolucionInput === 'nota_credito' ? 'bg-amber-950/20 border-amber-600' : 'bg-slate-800/40 border-slate-700' }} cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="radio" wire:model="tipoDevolucionInput" value="nota_credito" class="text-amber-500 focus:ring-0">
+                                    <div>
+                                        <div class="font-bold text-sm text-white">Nota de Crédito Electrónica</div>
+                                        <div class="text-xs text-slate-400">Genera comprobante SUNAT (solo para boletas y facturas)</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                    @elseif ($pasoDevolucion === 4)
+                        <div class="space-y-4 text-xs">
+                            <p class="text-slate-300">Escanee o busque el número de serie nuevo para realizar el cambio:</p>
+                            <div class="flex gap-2">
+                                <input type="text" wire:model.defer="serieNuevaCambioInput" placeholder="Número de serie nuevo disponible..." class="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono uppercase">
+                                <button type="button" wire:click="buscarSerieNuevaParaCambio" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">
+                                    Validar Serie
+                                </button>
+                            </div>
+
+                            @if ($serieNuevaSeleccionada)
+                                <div class="p-3 bg-slate-800/80 border border-emerald-600 rounded-xl space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-white text-sm">{{ $serieNuevaSeleccionada->producto->nombre }}</span>
+                                        <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 text-[10px] font-bold">DISPONIBLE</span>
+                                    </div>
+                                    <div class="font-mono text-slate-400">S/N: {{ $serieNuevaSeleccionada->numero_serie }}</div>
+                                    <div class="flex justify-between items-center pt-2 border-t border-slate-700 text-sm">
+                                        <span>Diferencia de Precio:</span>
+                                        <span class="font-bold font-mono {{ $diferenciaCambio > 0 ? 'text-amber-400' : ($diferenciaCambio < 0 ? 'text-emerald-400' : 'text-slate-300') }}">
+                                            @if($diferenciaCambio > 0) + S/ {{ number_format($diferenciaCambio, 2) }} (Cliente paga)
+                                            @elseif($diferenciaCambio < 0) - S/ {{ number_format(abs($diferenciaCambio), 2) }} (Reembolso)
+                                            @else S/ 0.00 (Mismo importe)
+                                            @endif
+                                        </span>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
+                    @elseif ($pasoDevolucion === 5)
+                        <div class="p-4 bg-slate-800/60 border border-slate-700 rounded-xl space-y-3 text-xs">
+                            <div class="font-bold text-sm text-white">Resumen de la Solicitud:</div>
+                            <div><strong>Tipo:</strong> {{ ucfirst(str_replace('_', ' ', $tipoDevolucionInput)) }}</div>
+                            <div><strong>Motivo:</strong> {{ ucfirst(str_replace('_', ' ', $motivoDevolucionInput)) }}</div>
+                            <div><strong>Detalle:</strong> {{ $detalleMotivoDevolucion }}</div>
+                            @if(auth()->user()->hasRole('admin'))
+                                <div class="p-2.5 rounded bg-emerald-950/40 border border-emerald-800 text-emerald-300 text-[11px]">
+                                    ✓ Como Administrador, la operación se <strong>completará y liquidará inmediatamente</strong> en el sistema.
+                                </div>
+                            @else
+                                <div class="p-2.5 rounded bg-blue-950/40 border border-blue-800 text-blue-300 text-[11px]">
+                                    ℹ Como Vendedor, se generará una <strong>solicitud de devolución</strong> pendiente de aprobación de gerencia.
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Footer del Asistente -->
+                <div class="px-5 py-3 border-t border-slate-800 flex justify-between bg-slate-800/50">
+                    <button type="button" wire:click="retrocederPasoDevolucion" 
+                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs rounded-lg transition {{ $pasoDevolucion === 1 ? 'invisible' : '' }}">
+                        &larr; Anterior
+                    </button>
+
+                    @if ($pasoDevolucion < 5)
+                        <button type="button" wire:click="avanzarPasoDevolucion" 
+                                class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition">
+                            Siguiente &rarr;
+                        </button>
+                    @else
+                        <button type="button" wire:click="procesarDevolucion" 
+                                class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition shadow-lg shadow-emerald-600/30">
+                            Confirmar y Procesar
+                        </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- MODAL RECEPCIÓN Y ENTREGA DE SERVICIO TÉCNICO EN POS -->
+    <!-- ========================================================================= -->
+    @if ($mostrarModalServicio)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-800/50">
+                    <div class="flex space-x-2">
+                        <button type="button" wire:click="$set('tabServicio', 'recibir')" class="px-3 py-1.5 rounded-lg text-xs font-bold {{ $tabServicio === 'recibir' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white' }}">
+                            Recepción Rápida
+                        </button>
+                        <button type="button" wire:click="$set('tabServicio', 'entregar')" class="px-3 py-1.5 rounded-lg text-xs font-bold {{ $tabServicio === 'entregar' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white' }}">
+                            Listas para Entrega
+                        </button>
+                    </div>
+                    <button wire:click="$set('mostrarModalServicio', false)" class="text-slate-400 hover:text-white">&times;</button>
+                </div>
+
+                <div class="p-5 flex-1 overflow-y-auto space-y-4 text-xs">
+                    @if ($tabServicio === 'recibir')
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Serie del Equipo (Si se vendió en tienda):</label>
+                                <input type="text" wire:model.defer="servicioSerieInput" placeholder="Ej. SN-LNV-001" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono uppercase">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block font-semibold text-slate-300 mb-1">O Descripción Equipo Externo:</label>
+                                    <input type="text" wire:model.defer="servicioEquipoDescripcion" placeholder="Ej. Laptop HP Pavilion 15" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-300 mb-1">Serie Externa (Opcional):</label>
+                                    <input type="text" wire:model.defer="servicioSerieExterna" placeholder="S/N del fabricante" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Falla Reportada por el Cliente *:</label>
+                                <textarea wire:model.defer="servicioFalla" rows="2" placeholder="Detalle la falla exacta..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Estado Físico y Accesorios Entregados:</label>
+                                <input type="text" wire:model.defer="servicioEstadoRecepcion" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold text-slate-300 mb-1">Fecha Promesa de Entrega:</label>
+                                <input type="date" wire:model.defer="servicioFechaPromesa" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                            </div>
+
+                            <button type="button" wire:click="registrarRecepcionServicio" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition text-sm">
+                                Registrar Ingreso a Taller
+                            </button>
+                        </div>
+
+                    @elseif ($tabServicio === 'entregar')
+                        <div class="space-y-3">
+                            <div class="mb-2">
+                                <label class="block font-semibold text-slate-300 mb-1">Persona que recoge el equipo (Nombre / DNI):</label>
+                                <input type="text" wire:model.defer="servicioEntregadoA" placeholder="Dejar en blanco para usar nombre del titular" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                            </div>
+
+                            @forelse($ordenesParaEntregar as $ord)
+                                <div class="p-3 bg-slate-800/60 border border-slate-700 rounded-xl flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold text-white text-sm font-mono">{{ $ord->codigo }}</div>
+                                        <div class="text-slate-300">{{ $ord->producto?->nombre ?? $ord->equipo_descripcion }}</div>
+                                        <div class="text-[11px] text-slate-400">Cliente: {{ $ord->cliente->nombre_razon_social }}</div>
+                                        @if($ord->costo_final > 0)
+                                            <div class="text-xs font-bold text-amber-400">Total: S/ {{ number_format((float)$ord->costo_final, 2) }} ({{ $ord->venta_id ? 'Pagado' : 'Pendiente' }})</div>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <button type="button" wire:click="entregarEquipoEnPos({{ $ord->id }})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs">
+                                            Entregar
+                                        </button>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-8 text-slate-500">
+                                    No hay órdenes pendientes de entrega en este momento.
+                                </div>
+                            @endforelse
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
 </div>
+

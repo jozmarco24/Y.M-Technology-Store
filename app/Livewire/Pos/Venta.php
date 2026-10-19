@@ -4,21 +4,29 @@ declare(strict_types=1);
 
 namespace App\Livewire\Pos;
 
+use App\Enums\EstadoOrdenServicio;
 use App\Enums\EstadoSerie;
 use App\Enums\MetodoPago;
+use App\Enums\MotivoDevolucion;
 use App\Enums\TipoComprobanteVenta;
+use App\Enums\TipoDevolucion;
 use App\Enums\TipoDocumentoCliente;
 use App\Enums\TipoMovimientoCaja;
 use App\Models\CajaSesion;
 use App\Models\Categoria;
 use App\Models\Cliente;
+use App\Models\OrdenServicio;
 use App\Models\Producto;
 use App\Models\Serie;
 use App\Models\User;
 use App\Models\Venta as VentaModel;
 use App\Services\CajaService;
+use App\Services\CambioService;
 use App\Services\ClienteService;
+use App\Services\DevolucionService;
+use App\Services\GarantiaService;
 use App\Services\InventarioService;
+use App\Services\OrdenServicioService;
 use App\Services\VentaService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -165,6 +173,65 @@ class Venta extends Component
     public ?string $mensajeError = null;
 
     public ?string $mensajeExito = null;
+
+    // ==========================================
+    // FASE 3C: CONSULTA DE GARANTÍA EN POS
+    // ==========================================
+    public bool $mostrarModalGarantia = false;
+
+    public string $busquedaGarantiaSerie = '';
+
+    public ?array $resultadoGarantia = null;
+
+    // ==========================================
+    // FASE 3C: ASISTENTE DE DEVOLUCIÓN / CAMBIO
+    // ==========================================
+    public bool $mostrarModalDevolucion = false;
+
+    public ?VentaModel $ventaDevolucion = null;
+
+    public int $pasoDevolucion = 1; // 1: Items, 2: Motivo y estado fisico, 3: Tipo, 4: Cambio serie, 5: Confirmar
+
+    public array $itemsDevolucion = [];
+
+    public string $tipoDevolucionInput = 'devolucion_dinero'; // devolucion_dinero, cambio_producto, nota_credito
+
+    public string $motivoDevolucionInput = 'defecto_fabrica';
+
+    public string $detalleMotivoDevolucion = '';
+
+    public string $metodoReembolsoDevolucion = 'efectivo';
+
+    public string $serieNuevaCambioInput = '';
+
+    public ?Serie $serieNuevaSeleccionada = null;
+
+    public float $diferenciaCambio = 0.00;
+
+    // ==========================================
+    // FASE 3C: RECEPCIÓN Y ENTREGA SERVICIO TÉCNICO
+    // ==========================================
+    public bool $mostrarModalServicio = false;
+
+    public string $tabServicio = 'recibir'; // 'recibir' o 'entregar'
+
+    public string $servicioTipoInput = 'garantia'; // garantia o pago
+
+    public string $servicioSerieInput = '';
+
+    public string $servicioEquipoDescripcion = '';
+
+    public string $servicioSerieExterna = '';
+
+    public int $servicioClienteId = 0;
+
+    public string $servicioFalla = '';
+
+    public string $servicioEstadoRecepcion = 'Carcasa íntegra, con accesorios originales';
+
+    public string $servicioFechaPromesa = '';
+
+    public string $servicioEntregadoA = '';
 
     public function mount(CajaService $cajaService): void
     {
@@ -810,6 +877,335 @@ class Venta extends Component
     }
 
     // =========================================================================
+    // FASE 3C: MÉTODOS DE CONSULTA DE GARANTÍA EN POS
+    // =========================================================================
+    public function abrirModalGarantia(): void
+    {
+        $this->limpiarMensajes();
+        $this->busquedaGarantiaSerie = '';
+        $this->resultadoGarantia = null;
+        $this->mostrarModalGarantia = true;
+    }
+
+    public function consultarGarantiaEnPos(GarantiaService $garantiaService): void
+    {
+        $this->limpiarMensajes();
+        $sn = trim($this->busquedaGarantiaSerie);
+        if ($sn === '') {
+            $this->mensajeError = 'Ingrese un número de serie para consultar.';
+
+            return;
+        }
+
+        $res = $garantiaService->consultarPorSerie($sn);
+        if (! $res['encontrado']) {
+            $this->mensajeError = "No se encontró ningún registro para la serie '{$sn}'.";
+            $this->resultadoGarantia = null;
+
+            return;
+        }
+
+        $this->resultadoGarantia = $res;
+        $this->mostrarModalGarantia = true;
+    }
+
+    public function iniciarDevolucionDesdeGarantia(): void
+    {
+        if (! $this->resultadoGarantia || empty($this->resultadoGarantia['venta_codigo'])) {
+            $this->mensajeError = 'No hay una venta asociada a esta serie para procesar devolución.';
+
+            return;
+        }
+
+        $venta = VentaModel::where('codigo', $this->resultadoGarantia['venta_codigo'])->first();
+        if (! $venta) {
+            $this->mensajeError = 'No se encontró la venta de origen.';
+
+            return;
+        }
+
+        $this->mostrarModalGarantia = false;
+        $this->abrirAsistenteDevolucion($venta->id);
+    }
+
+    public function recibirServicioDesdeGarantia(): void
+    {
+        if (! $this->resultadoGarantia) {
+            return;
+        }
+
+        $this->mostrarModalGarantia = false;
+        $this->servicioSerieInput = $this->resultadoGarantia['serie'];
+        $this->servicioTipoInput = ($this->resultadoGarantia['vigente'] ?? false) ? 'garantia' : 'pago';
+        $this->servicioClienteId = $this->clienteId;
+        $this->servicioFalla = '';
+        $this->tabServicio = 'recibir';
+        $this->mostrarModalServicio = true;
+    }
+
+    // =========================================================================
+    // FASE 3C: ASISTENTE DE DEVOLUCIONES Y CAMBIOS EN POS
+    // =========================================================================
+    public function abrirAsistenteDevolucion(int $ventaId): void
+    {
+        $this->limpiarMensajes();
+        $venta = VentaModel::with(['detalles.producto', 'detalles.serie', 'cliente'])->find($ventaId);
+        if (! $venta) {
+            $this->mensajeError = 'Venta no encontrada.';
+
+            return;
+        }
+
+        if ($venta->estado->value !== 'completada') {
+            $this->mensajeError = 'Solo se pueden procesar devoluciones sobre ventas completadas.';
+
+            return;
+        }
+
+        $this->ventaDevolucion = $venta;
+        $this->pasoDevolucion = 1;
+        $this->itemsDevolucion = [];
+        $this->tipoDevolucionInput = 'devolucion_dinero';
+        $this->motivoDevolucionInput = 'defecto_fabrica';
+        $this->detalleMotivoDevolucion = '';
+        $this->metodoReembolsoDevolucion = 'efectivo';
+        $this->serieNuevaCambioInput = '';
+        $this->serieNuevaSeleccionada = null;
+        $this->diferenciaCambio = 0.00;
+
+        $devolucionService = app(DevolucionService::class);
+
+        // Pre-cargar ítems con su saldo devolvible
+        foreach ($venta->detalles as $det) {
+            $saldo = $devolucionService->saldoDevolvible($det);
+            if ($saldo['cantidad_disponible'] > 0) {
+                $this->itemsDevolucion[$det->id] = [
+                    'seleccionado' => false,
+                    'venta_detalle_id' => $det->id,
+                    'producto_id' => $det->producto_id,
+                    'producto_nombre' => $det->producto->nombre,
+                    'serie_id' => $det->serie_id,
+                    'serie_numero' => $det->serie?->numero_serie,
+                    'cantidad_disponible' => $saldo['cantidad_disponible'],
+                    'monto_disponible' => $saldo['monto_disponible'],
+                    'cantidad_devolver' => 1,
+                    'monto_devolver' => $saldo['monto_disponible'],
+                    'estado_fisico' => 'nuevo_sellado',
+                    'destino_serie' => 'disponible',
+                ];
+            }
+        }
+
+        $this->mostrarModalHistorial = false;
+        $this->mostrarModalDevolucion = true;
+    }
+
+    public function avanzarPasoDevolucion(): void
+    {
+        $this->limpiarMensajes();
+
+        if ($this->pasoDevolucion === 1) {
+            $seleccionados = collect($this->itemsDevolucion)->where('seleccionado', true);
+            if ($seleccionados->isEmpty()) {
+                $this->mensajeError = 'Debe seleccionar al menos un producto o serie para devolver.';
+
+                return;
+            }
+            $this->pasoDevolucion = 2;
+        } elseif ($this->pasoDevolucion === 2) {
+            if (empty(trim($this->detalleMotivoDevolucion))) {
+                $this->mensajeError = 'Debe indicar el detalle o motivo de la devolución.';
+
+                return;
+            }
+            $this->pasoDevolucion = 3;
+        } elseif ($this->pasoDevolucion === 3) {
+            if ($this->tipoDevolucionInput === 'cambio_producto') {
+                $this->pasoDevolucion = 4;
+            } else {
+                $this->pasoDevolucion = 5;
+            }
+        } elseif ($this->pasoDevolucion === 4) {
+            if (! $this->serieNuevaSeleccionada) {
+                $this->mensajeError = 'Debe seleccionar o escanear una serie nueva disponible para el cambio.';
+
+                return;
+            }
+            $this->pasoDevolucion = 5;
+        }
+    }
+
+    public function retrocederPasoDevolucion(): void
+    {
+        if ($this->pasoDevolucion > 1) {
+            $this->pasoDevolucion--;
+        }
+    }
+
+    public function buscarSerieNuevaParaCambio(): void
+    {
+        $this->limpiarMensajes();
+        $sn = strtoupper(trim($this->serieNuevaCambioInput));
+        if ($sn === '') {
+            $this->mensajeError = 'Ingrese el número de serie para el cambio.';
+
+            return;
+        }
+
+        $serie = Serie::where('numero_serie', $sn)->where('estado', EstadoSerie::DISPONIBLE)->with('producto')->first();
+        if (! $serie) {
+            $this->mensajeError = "La serie '{$sn}' no existe o no está en estado disponible.";
+            $this->serieNuevaSeleccionada = null;
+
+            return;
+        }
+
+        $this->serieNuevaSeleccionada = $serie;
+
+        // Calcular diferencia con el primer ítem devuelto
+        $itemDev = collect($this->itemsDevolucion)->firstWhere('seleccionado', true);
+        if ($itemDev) {
+            $precioOriginal = (float) $itemDev['monto_devolver'];
+            $precioNuevo = (float) $serie->producto->precio_venta;
+            $this->diferenciaCambio = round($precioNuevo - $precioOriginal, 2);
+        }
+    }
+
+    public function procesarDevolucion(DevolucionService $devolucionService): void
+    {
+        $this->limpiarMensajes();
+        $user = Auth::user();
+
+        $itemsParaEnviar = [];
+        foreach ($this->itemsDevolucion as $it) {
+            if (! empty($it['seleccionado'])) {
+                $itemsParaEnviar[] = [
+                    'venta_detalle_id' => $it['venta_detalle_id'],
+                    'serie_id' => $it['serie_id'],
+                    'cantidad' => (int) $it['cantidad_devolver'],
+                    'monto_devuelto' => (float) $it['monto_devolver'],
+                    'estado_fisico' => $it['estado_fisico'],
+                    'destino_serie' => $it['destino_serie'],
+                ];
+            }
+        }
+
+        try {
+            $tipoEnum = TipoDevolucion::from($this->tipoDevolucionInput);
+            $motivoEnum = MotivoDevolucion::from($this->motivoDevolucionInput);
+
+            $devolucion = $devolucionService->solicitar(
+                venta: $this->ventaDevolucion,
+                items: $itemsParaEnviar,
+                tipo: $tipoEnum,
+                motivo: $motivoEnum,
+                detalleMotivo: trim($this->detalleMotivoDevolucion),
+                solicitante: $user,
+                metodoReembolso: $this->metodoReembolsoDevolucion,
+                aprobacionExcepcionalAdmin: $user->hasRole('admin')
+            );
+
+            // Si el usuario es administrador y está completando directamente
+            if ($user->hasRole('admin')) {
+                if ($this->tipoDevolucionInput === 'cambio_producto' && $this->serieNuevaSeleccionada) {
+                    $itemOriginal = collect($itemsParaEnviar)->first();
+                    $serieOriginal = Serie::find($itemOriginal['serie_id']);
+                    if ($serieOriginal) {
+                        app(CambioService::class)->cambiarSerie(
+                            $devolucion,
+                            $serieOriginal,
+                            $this->serieNuevaSeleccionada,
+                            $user
+                        );
+                    }
+                }
+
+                $devolucionService->completar($devolucion, $user);
+                $this->mensajeExito = "Devolución {$devolucion->codigo} completada exitosamente.";
+            } else {
+                $this->mensajeExito = "Solicitud de devolución {$devolucion->codigo} enviada para aprobación de gerencia.";
+            }
+
+            $this->mostrarModalDevolucion = false;
+        } catch (\Throwable $e) {
+            $this->mensajeError = $e->getMessage();
+        }
+    }
+
+    // =========================================================================
+    // FASE 3C: SERVICIO TÉCNICO EN POS (RECEPCIÓN RÁPIDA Y ENTREGA)
+    // =========================================================================
+    public function abrirModalServicio(): void
+    {
+        $this->limpiarMensajes();
+        $this->tabServicio = 'recibir';
+        $this->servicioSerieInput = '';
+        $this->servicioEquipoDescripcion = '';
+        $this->servicioSerieExterna = '';
+        $this->servicioClienteId = $this->clienteId;
+        $this->servicioFalla = '';
+        $this->servicioEstadoRecepcion = 'Carcasa íntegra, con cargador/accesorios originales';
+        $this->servicioFechaPromesa = now()->addDays(2)->format('Y-m-d');
+        $this->mostrarModalServicio = true;
+    }
+
+    public function registrarRecepcionServicio(OrdenServicioService $ordenService): void
+    {
+        $this->limpiarMensajes();
+        $user = Auth::user();
+
+        if (empty(trim($this->servicioFalla))) {
+            $this->mensajeError = 'Debe ingresar la falla reportada por el cliente.';
+
+            return;
+        }
+
+        $serieId = null;
+        if (! empty(trim($this->servicioSerieInput))) {
+            $serie = Serie::where('numero_serie', strtoupper(trim($this->servicioSerieInput)))->first();
+            $serieId = $serie?->id;
+        }
+
+        try {
+            $orden = $ordenService->recibir([
+                'cliente_id' => $this->servicioClienteId ?: $this->clienteId,
+                'serie_id' => $serieId,
+                'equipo_descripcion' => $this->servicioEquipoDescripcion ?: null,
+                'serie_externa' => $this->servicioSerieExterna ?: null,
+                'falla_reportada' => trim($this->servicioFalla),
+                'estado_recepcion' => trim($this->servicioEstadoRecepcion),
+                'fecha_promesa' => $this->servicioFechaPromesa ?: null,
+            ], $user);
+
+            $this->mensajeExito = "Orden de Servicio {$orden->codigo} creada exitosamente.";
+            $this->mostrarModalServicio = false;
+        } catch (\Throwable $e) {
+            $this->mensajeError = $e->getMessage();
+        }
+    }
+
+    public function entregarEquipoEnPos(int $ordenId, OrdenServicioService $ordenService): void
+    {
+        $this->limpiarMensajes();
+        $user = Auth::user();
+        $orden = OrdenServicio::find($ordenId);
+        if (! $orden) {
+            $this->mensajeError = 'Orden no encontrada.';
+
+            return;
+        }
+
+        $persona = trim($this->servicioEntregadoA) !== '' ? trim($this->servicioEntregadoA) : $orden->cliente->nombre_razon_social;
+
+        try {
+            $ordenService->entregar($orden, $persona, $user);
+            $this->mensajeExito = "Equipo de la orden {$orden->codigo} entregado a {$persona}.";
+            $this->servicioEntregadoA = '';
+        } catch (\Throwable $e) {
+            $this->mensajeError = $e->getMessage();
+        }
+    }
+
     // RENDERIZADO
     // =========================================================================
     public function render(): View
@@ -876,6 +1272,18 @@ class Venta extends Component
             $ventasDelDia = $hQuery->get();
         }
 
+        // Órdenes listas para entregar en el POS
+        $ordenesParaEntregar = collect();
+        if ($this->mostrarModalServicio && $this->tabServicio === 'entregar') {
+            $ordenesParaEntregar = OrdenServicio::whereIn('estado', [
+                EstadoOrdenServicio::REPARADO->value,
+                EstadoOrdenServicio::SIN_SOLUCION->value,
+            ])
+                ->with(['cliente', 'producto', 'serie'])
+                ->latest('id')
+                ->get();
+        }
+
         return view('livewire.pos.venta', [
             'productos' => $productos,
             'categorias' => $categorias,
@@ -883,6 +1291,7 @@ class Venta extends Component
             'clientesList' => $clientesList,
             'ventasDelDia' => $ventasDelDia,
             'clienteActual' => Cliente::find($this->clienteId),
+            'ordenesParaEntregar' => $ordenesParaEntregar,
         ]);
     }
 }
