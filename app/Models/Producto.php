@@ -36,6 +36,11 @@ class Producto extends Model
         'imagen',
         'especificaciones',
         'activo',
+        'publicado_web',
+        'destacado',
+        'meta_titulo',
+        'meta_descripcion',
+        'peso_kg',
     ];
 
     protected function casts(): array
@@ -48,6 +53,9 @@ class Producto extends Model
             'stock_minimo' => 'integer',
             'especificaciones' => 'array',
             'activo' => 'boolean',
+            'publicado_web' => 'boolean',
+            'destacado' => 'boolean',
+            'peso_kg' => 'decimal:2',
         ];
     }
 
@@ -62,6 +70,18 @@ class Producto extends Model
     public function scopeActivos(Builder $query): Builder
     {
         return $query->where('activo', true);
+    }
+
+    public function scopePublicados(Builder $query): Builder
+    {
+        return $query->where('activo', true)->where('publicado_web', true);
+    }
+
+    public function scopeConStock(Builder $query): Builder
+    {
+        return $query->whereHas('series', function (Builder $q) {
+            $q->where('estado', EstadoSerie::DISPONIBLE);
+        });
     }
 
     public function categoria(): BelongsTo
@@ -82,6 +102,16 @@ class Producto extends Model
     public function seriesDisponibles(): HasMany
     {
         return $this->hasMany(Serie::class, 'producto_id')->where('estado', EstadoSerie::DISPONIBLE);
+    }
+
+    public function imagenes(): HasMany
+    {
+        return $this->hasMany(ProductoImagen::class, 'producto_id')->orderBy('orden', 'asc');
+    }
+
+    public function imagenPrincipal(): HasMany
+    {
+        return $this->hasMany(ProductoImagen::class, 'producto_id')->where('es_principal', true);
     }
 
     public function movimientosInventario(): HasMany

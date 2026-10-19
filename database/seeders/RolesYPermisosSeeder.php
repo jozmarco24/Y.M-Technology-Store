@@ -76,6 +76,14 @@ class RolesYPermisosSeeder extends Seeder
             'servicio.cobrar',
             'servicio.entregar',
             'servicio.forzar_tipo',
+            // Comercio Electrónico y Web (Fase 4A)
+            'pedidos.ver',
+            'pedidos.gestionar',
+            'pedidos.cancelar',
+            'pedidos.reembolsar',
+            'cupones.gestionar',
+            'envios.gestionar',
+            'web.publicar_productos',
         ];
 
         foreach ($permisos as $permiso) {
@@ -119,6 +127,8 @@ class RolesYPermisosSeeder extends Seeder
             // NO costos.ver
             'garantias.ver',
             'servicio.ver',
+            'pedidos.ver',
+            'pedidos.gestionar',
         ]);
 
         // Vendedor
@@ -136,6 +146,7 @@ class RolesYPermisosSeeder extends Seeder
             'servicio.recibir',
             'servicio.entregar',
             'servicio.cobrar',
+            'pedidos.ver',
         ]);
 
         // Técnico

@@ -23,12 +23,15 @@ class Categoria extends Model
         'slug',
         'descripcion',
         'activo',
+        'orden',
+        'imagen',
     ];
 
     protected function casts(): array
     {
         return [
             'activo' => 'boolean',
+            'orden' => 'integer',
         ];
     }
 

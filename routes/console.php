@@ -24,3 +24,5 @@ Schedule::call(function () {
 Schedule::call(function () {
     app(GarantiaService::class)->marcarVencidas();
 })->dailyAt('00:01')->name('marcar-garantias-vencidas');
+
+Schedule::command('pedidos:expirar')->everyMinute()->name('expirar-pedidos-vencidos');

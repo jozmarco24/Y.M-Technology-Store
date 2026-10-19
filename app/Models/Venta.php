@@ -67,6 +67,7 @@ class Venta extends Model
         'anulada_por',
         'anulada_en',
         'motivo_anulacion',
+        'canal',
     ];
 
     protected function casts(): array
